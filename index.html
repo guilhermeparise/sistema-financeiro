@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 :root{
 --primary:#3b82f6;
 --income:#10b981;
@@ -52,11 +53,33 @@ font-weight:bold;
 cursor:pointer;
 }
 
+.balance{
+padding:15px;
+border-radius:10px;
+background:#f8fafc;
+margin-bottom:15px;
+}
+
 .transaction{
 padding:10px;
-border-left:4px solid var(--primary);
-margin-bottom:5px;
+margin-bottom:6px;
+border-radius:6px;
+display:flex;
+justify-content:space-between;
+align-items:center;
 background:#f8fafc;
+}
+
+.income{border-left:4px solid var(--income)}
+.expense{border-left:4px solid var(--expense)}
+
+.delete{
+background:var(--expense);
+padding:5px 8px;
+font-size:12px;
+border:none;
+border-radius:5px;
+cursor:pointer;
 }
 
 </style>
@@ -67,6 +90,7 @@ background:#f8fafc;
 <div class="container">
 
 <div id="page-login" class="page active">
+
 <h2>🐷 Porquim IA</h2>
 
 <input type="email" id="login-email" placeholder="Email">
@@ -75,6 +99,7 @@ background:#f8fafc;
 <button onclick="handleLogin()">Entrar</button>
 
 <button onclick="showPage('page-register')">Criar conta</button>
+
 </div>
 
 <div id="page-register" class="page">
@@ -97,11 +122,19 @@ background:#f8fafc;
 
 <button onclick="logout()">Sair</button>
 
-<hr>
+<div class="balance">
+
+<b>Saldo:</b> R$ <span id="saldo">0</span><br>
+
+<span style="color:green">Entradas: R$ <span id="entradas">0</span></span><br>
+
+<span style="color:red">Saídas: R$ <span id="saidas">0</span></span>
+
+</div>
 
 <input type="text" id="desc" placeholder="Descrição">
 
-<input type="text" id="amount" placeholder="Valor">
+<input type="number" id="amount" placeholder="Valor">
 
 <input type="date" id="date">
 
@@ -124,7 +157,7 @@ background:#f8fafc;
 
 const supabaseUrl="https://rvvyuapnmkblzfrzyjbd.supabase.co"
 
-const supabaseKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3dnl1YXBubWtibHpmcnp5amJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzY5OTgsImV4cCI6MjA4ODkxMjk5OH0.5AVdkXHarr1puj_0ZXdpR0zj74j7CVtRnQd35fF2kp8"
+const supabaseKey="SUA_KEY_AQUI"
 
 const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
 
@@ -151,16 +184,12 @@ return
 }
 
 const {error}=await supabaseClient
-
 .from("usuarios")
-
 .insert([{name,email,pass}])
 
 if(error){
 
 alert("Erro ao cadastrar")
-
-console.log(error)
 
 }else{
 
@@ -178,15 +207,10 @@ const email=document.getElementById("login-email").value
 const pass=document.getElementById("login-pass").value
 
 const {data,error}=await supabaseClient
-
 .from("usuarios")
-
 .select("*")
-
 .eq("email",email)
-
 .eq("pass",pass)
-
 .single()
 
 if(error||!data){
@@ -197,6 +221,8 @@ alert("Login inválido")
 
 currentUser=data
 
+localStorage.setItem("userEmail",data.email)
+
 initApp()
 
 }
@@ -204,6 +230,8 @@ initApp()
 }
 
 function logout(){
+
+localStorage.removeItem("userEmail")
 
 currentUser=null
 
@@ -226,38 +254,40 @@ loadTransactions()
 async function saveTransaction(){
 
 const desc=document.getElementById("desc").value
-
 const amount=parseFloat(document.getElementById("amount").value)
-
 const date=document.getElementById("date").value
-
 const type=document.getElementById("type").value
 
 if(!desc||!amount||!date){
-
 alert("Dados inválidos")
-
 return
-
 }
 
 await supabaseClient
-
 .from("transacoes")
-
 .insert([{
 
 email:currentUser.email,
-
 descricao:desc,
-
 amount,
-
 date,
-
 type
 
 }])
+
+document.getElementById("desc").value=""
+document.getElementById("amount").value=""
+
+loadTransactions()
+
+}
+
+async function deleteTransaction(id){
+
+await supabaseClient
+.from("transacoes")
+.delete()
+.eq("id",id)
 
 loadTransactions()
 
@@ -266,11 +296,8 @@ loadTransactions()
 async function loadTransactions(){
 
 const {data}=await supabaseClient
-
 .from("transacoes")
-
 .select("*")
-
 .eq("email",currentUser.email)
 
 transactions=data||[]
@@ -283,21 +310,61 @@ function renderUI(){
 
 const list=document.getElementById("transaction-list")
 
+let entradas=0
+let saidas=0
+
 list.innerHTML=""
 
 transactions.forEach(t=>{
 
+if(t.type=="entrada") entradas+=t.amount
+if(t.type=="saida") saidas+=t.amount
+
 const div=document.createElement("div")
 
-div.className="transaction"
+div.className="transaction "+(t.type=="entrada"?"income":"expense")
 
-div.innerHTML=
+div.innerHTML=`
 
-t.descricao+" - R$ "+t.amount
+<span>${t.descricao} - R$ ${t.amount}</span>
+
+<button class="delete" onclick="deleteTransaction(${t.id})">X</button>
+
+`
 
 list.appendChild(div)
 
 })
+
+document.getElementById("entradas").innerText=entradas.toFixed(2)
+
+document.getElementById("saidas").innerText=saidas.toFixed(2)
+
+document.getElementById("saldo").innerText=(entradas-saidas).toFixed(2)
+
+}
+
+window.onload=async()=>{
+
+const email=localStorage.getItem("userEmail")
+
+if(email){
+
+const {data}=await supabaseClient
+.from("usuarios")
+.select("*")
+.eq("email",email)
+.single()
+
+if(data){
+
+currentUser=data
+
+initApp()
+
+}
+
+}
 
 }
 
