@@ -1,510 +1,480 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Flowly</title>
+<title>Porquim IA - Controle Financeiro para Loja</title>
 
 <style>
 
-:root{
---bg:#121212;
---card:#1e1e1e;
---venda:#22c55e;
---gasto:#ef4444;
---gray:#9ca3af;
-}
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial;
+:root { 
+--bg-overlay: rgba(248,250,252,0.88); 
+--card:#ffffff; 
+--text:#1e293b; 
+--primary:#3b82f6; 
+--income:#10b981; 
+--expense:#ef4444; 
+--border:#e2e8f0; 
 }
 
 body{
-background:var(--bg);
+font-family:Inter,sans-serif;
+color:var(--text);
+margin:0;
+padding:20px;
 display:flex;
 justify-content:center;
-padding:20px;
+min-height:100vh;
+background-color:#f8fafc;
+background-image:linear-gradient(var(--bg-overlay),var(--bg-overlay)),url('https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?q=80&w=2070&auto=format&fit=crop');
+background-size:cover;
+background-position:center;
+background-attachment:fixed;
 }
 
 .container{
 width:100%;
-max-width:700px;
+max-width:500px;
+box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);
+background:rgba(255,255,255,0.6);
+border-radius:16px;
+padding:20px;
+backdrop-filter:blur(8px);
 }
 
-header{
-text-align:center;
-font-size:50px;
-font-weight:bold;
-color:white;
-margin-bottom:30px;
+header{text-align:center;margin-bottom:25px;}
+
+h1{
+font-size:1.8rem;
+color:#1e3a8a;
+margin:0;
+font-weight:800;
 }
 
-form{
+.summary{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-bottom:25px;
+}
+
+.card{
+background:var(--card);
+padding:15px;
+border-radius:12px;
+border:1px solid var(--border);
+}
+
+.card.full{
+grid-column:1/-1;
+border-top:4px solid var(--primary);
+}
+
+.card label{
+font-size:.7rem;
+text-transform:uppercase;
+color:#64748b;
+font-weight:700;
+}
+
+.card p{
+margin:5px 0 0;
+font-size:1.3rem;
+font-weight:800;
+}
+
+.form-group{
+background:var(--card);
+padding:20px;
+border-radius:12px;
+margin-bottom:25px;
+border:1px solid var(--border);
+}
+
+input,select,button{
+width:100%;
+padding:12px;
+margin-bottom:12px;
+border:1px solid var(--border);
+border-radius:8px;
+box-sizing:border-box;
+font-size:1rem;
+}
+
+.row{
 display:flex;
-flex-wrap:wrap;
+gap:10px;
+}
+
+button{
+background:var(--primary);
+color:white;
+border:none;
+font-weight:700;
+cursor:pointer;
+}
+
+button.cancel{
+background:#94a3b8;
+}
+
+.list-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+}
+
+.top-buttons{
+display:flex;
 gap:10px;
 margin-bottom:15px;
 }
 
-input,select,button{
-padding:12px;
-border-radius:10px;
-border:none;
-font-size:14px;
+.top-buttons button{
+font-size:.9rem;
+padding:8px;
 }
 
-input,select{
-flex:1;
-background:#1f1f1f;
-color:white;
-}
-
-button{
-background:#22c55e;
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
-
-button:hover{
-opacity:0.9;
-}
-
-#confirmEdit{
-display:none;
-background:#3b82f6;
-width:100%;
-}
-
-.summary{
-display:flex;
-gap:10px;
-margin-bottom:20px;
-}
-
-.card{
-flex:1;
-background:var(--card);
-padding:15px;
-border-radius:12px;
-text-align:center;
-}
-
-.card h3{
-color:var(--gray);
-font-size:14px;
-}
-
-.card span{
-color:white;
-font-size:20px;
-font-weight:bold;
-}
-
-.day{
-display:flex;
-justify-content:center;
-align-items:center;
-gap:8px;
-color:var(--gray);
-margin-top:25px;
-margin-bottom:10px;
-font-size:15px;
-font-weight:bold;
-}
-
-.transaction{
-background:var(--card);
-border-radius:12px;
-padding:15px;
-margin-bottom:10px;
+.day-group{
+background:#f1f5f9;
+padding:8px 12px;
+border-radius:8px;
+margin:25px 0 10px 0;
 display:flex;
 justify-content:space-between;
+border:1px solid var(--border);
+}
+
+.day-total{
+font-weight:800;
+font-size:.9rem;
+}
+
+.transaction-item{
+background:var(--card);
+padding:15px;
+border-radius:10px;
+margin-bottom:8px;
+display:flex;
 align-items:center;
+border-left:5px solid #ddd;
 }
 
-.desc{
-color:white;
-font-weight:bold;
-}
+.item-income{border-left-color:var(--income);}
+.item-expense{border-left-color:var(--expense);}
 
-.amount{
-font-weight:bold;
-}
+.info{flex:1;}
 
-.venda .amount{
-color:var(--venda);
-}
-
-.gasto .amount{
-color:var(--gasto);
+.value{
+font-weight:800;
+margin-right:15px;
 }
 
 .actions{
 display:flex;
-gap:10px;
+gap:8px;
 }
 
-.icon{
-cursor:pointer;
-}
-
-.report{
-margin-top:20px;
-}
-
-#relatorio{
-margin-top:20px;
-background:#1e1e1e;
-padding:20px;
-border-radius:12px;
-color:white;
-text-align:center;
+.actions button{
+width:auto;
+padding:6px 10px;
+background:#f1f5f9;
+color:#475569;
 }
 
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<header>Flowly</header>
-
-<form id="form">
-
-<input id="desc" placeholder="Descrição" required pattern="[A-Za-zÀ-ÿ ]+">
-
-<input id="amount" type="number" min="0" step="0.01" placeholder="Valor" required>
-
-<select id="category">
-<option value="venda">Venda</option>
-<option value="gasto">Gasto</option>
-</select>
-
-<input type="date" id="date" required>
-
-<button type="submit">Adicionar</button>
-
-<button type="button" id="confirmEdit">Confirmar edição</button>
-
-</form>
+<header>
+<h1>🐷 Porquim IA</h1>
+</header>
 
 <div class="summary">
 
-<div class="card">
-<h3>Saldo</h3>
-<span id="saldo">0</span>
+<div class="card full">
+<label>Saldo no Mês</label>
+<p id="total-balance">R$ 0,00</p>
 </div>
 
 <div class="card">
-<h3>Total Venda</h3>
-<span id="vendas">0</span>
+<label style="color:var(--income)">Entradas</label>
+<p style="color:var(--income)" id="total-income">R$ 0,00</p>
 </div>
 
 <div class="card">
-<h3>Total Gasto</h3>
-<span id="gastos">0</span>
+<label style="color:var(--expense)">Saídas</label>
+<p style="color:var(--expense)" id="total-expense">R$ 0,00</p>
 </div>
 
 </div>
 
-<div class="report">
+<div class="form-group">
 
-<input type="month" id="month">
+<input type="text" id="desc" placeholder="Descrição">
 
-<button onclick="mostrarRelatorio()">Ver Relatório</button>
+<div class="row">
+<input type="text" id="amount" placeholder="Valor (ex: 15,00)">
+<input type="date" id="date">
+</div>
 
-<button onclick="compartilharRelatorio()">📤 Compartilhar Relatório</button>
+<div class="row">
+
+<select id="category">
+<option value="Venda">Venda 💰</option>
+<option value="Reposição">Reposição de Estoque</option>
+<option value="Alimentação">Alimentação</option>
+<option value="Lazer">Lazer</option>
+<option value="Salário">Salário</option>
+<option value="Casa">Casa</option>
+<option value="Outros">Outros</option>
+</select>
+
+<select id="type">
+<option value="entrada">Entrada 📥</option>
+<option value="saida">Saída 📤</option>
+</select>
 
 </div>
 
-<div id="lista"></div>
+<button onclick="saveTransaction()">Adicionar ao Porquim</button>
 
-<div id="relatorio"></div>
+</div>
+
+<div class="list-header">
+
+<strong>Histórico Diário</strong>
+
+<input type="month" id="month-filter" onchange="renderUI()">
+
+</div>
+
+<div class="top-buttons">
+
+<button onclick="abrirMes()">📅 Selecionar Mês</button>
+
+<button onclick="relatorioMes()">📊 Relatório do Mês</button>
+
+</div>
+
+<div id="transaction-list"></div>
 
 </div>
 
 <script>
 
-let dados=JSON.parse(localStorage.getItem("flowly"))||[]
+let transactions=[];
 
-let editIndex=null
+try{
+transactions=JSON.parse(localStorage.getItem('porquim_ia_db'))||[];
+}catch(e){transactions=[];}
 
-document.getElementById("date").value=new Date().toISOString().split("T")[0]
+const today=new Date();
 
-function salvar(){
-localStorage.setItem("flowly",JSON.stringify(dados))
+document.getElementById('month-filter').value=today.toISOString().substring(0,7);
+document.getElementById('date').valueAsDate=today;
+
+function parseValue(val){
+if(!val)return 0;
+let clean=val.replace(/[^\d,]/g,'').replace(',','.');
+return parseFloat(clean)||0;
 }
 
-function render(){
+function saveTransaction(){
 
-let lista=document.getElementById("lista")
+const desc=document.getElementById('desc').value;
+const amount=parseValue(document.getElementById('amount').value);
+const date=document.getElementById('date').value;
+const category=document.getElementById('category').value;
+const type=document.getElementById('type').value;
 
-lista.innerHTML=""
-
-let saldo=0
-let vendas=0
-let gastos=0
-
-dados.sort((a,b)=>new Date(a.data)-new Date(b.data))
-
-let ultimoDia=""
-
-dados.forEach((t,i)=>{
-
-if(t.data!==ultimoDia){
-
-let day=document.createElement("div")
-day.className="day"
-day.innerHTML="📅 "+new Date(t.data).toLocaleDateString("pt-BR")
-
-lista.appendChild(day)
-
-ultimoDia=t.data
-
+if(!desc||amount<=0||!date){
+alert("Preencha todos os campos!");
+return;
 }
 
-saldo+=t.tipo=="venda"?t.valor:-t.valor
+transactions.push({
+id:Date.now(),
+desc,
+amount,
+date,
+category,
+type
+});
 
-if(t.tipo=="venda")vendas+=t.valor
-else gastos+=t.valor
+localStorage.setItem('porquim_ia_db',JSON.stringify(transactions));
 
-let div=document.createElement("div")
-
-div.className="transaction "+t.tipo
-
-div.innerHTML=`
-
-<div class="desc">${t.desc}</div>
-
-<div class="amount">
-${t.tipo=="venda"?"+":"-"} R$ ${t.valor.toFixed(2)}
-</div>
-
-<div class="actions">
-
-<span class="icon" onclick="editar(${i})">✏</span>
-<span class="icon" onclick="deletar(${i})">🗑</span>
-
-</div>
-
-`
-
-lista.appendChild(div)
-
-})
-
-document.getElementById("saldo").innerText=saldo.toFixed(2)
-document.getElementById("vendas").innerText=vendas.toFixed(2)
-document.getElementById("gastos").innerText=gastos.toFixed(2)
-
-salvar()
+renderUI();
 
 }
 
-document.getElementById("form").addEventListener("submit",e=>{
-
-e.preventDefault()
-
-let desc=document.getElementById("desc").value
-let valor=parseFloat(document.getElementById("amount").value)
-let tipo=document.getElementById("category").value
-let data=document.getElementById("date").value
-
-if(editIndex!==null){
-
-dados[editIndex]={desc,valor,tipo,data}
-
-editIndex=null
-
-document.getElementById("confirmEdit").style.display="none"
-
-}else{
-
-dados.push({desc,valor,tipo,data})
-
+function abrirMes(){
+document.getElementById("month-filter").showPicker();
 }
 
-render()
+function relatorioMes(){
 
-e.target.reset()
+const filterVal=document.getElementById('month-filter').value;
 
-document.getElementById("date").value=new Date().toISOString().split("T")[0]
+let totalIncome=0;
+let totalExpense=0;
 
-})
+let grouped={};
 
-function editar(i){
-
-let t=dados[i]
-
-desc.value=t.desc
-amount.value=t.valor
-category.value=t.tipo
-date.value=t.data
-
-editIndex=i
-
-confirmEdit.style.display="block"
-
-}
-
-confirmEdit.onclick=function(){
-
-let desc=document.getElementById("desc").value
-let valor=parseFloat(document.getElementById("amount").value)
-let tipo=document.getElementById("category").value
-let data=document.getElementById("date").value
-
-dados[editIndex]={desc,valor,tipo,data}
-
-editIndex=null
-
-this.style.display="none"
-
-render()
-
-}
-
-function deletar(i){
-
-if(confirm("Excluir registro?")){
-
-dados.splice(i,1)
-
-render()
-
-}
-
-}
-
-function mostrarRelatorio(){
-
-let mes=month.value
-
-if(!mes){
-alert("Escolha um mês")
-return
-}
-
-let vendas=0
-let gastos=0
-
-let vendasPorDia={}
-let gastosPorDia={}
-
-dados
-.filter(t=>t.data.startsWith(mes))
+transactions
+.filter(t=>t.date.startsWith(filterVal))
 .forEach(t=>{
 
-if(t.tipo=="venda"){
+if(!grouped[t.date]){
+grouped[t.date]={income:0,expense:0};
+}
 
-vendas+=t.valor
-
-if(!vendasPorDia[t.data])vendasPorDia[t.data]=0
-vendasPorDia[t.data]+=t.valor
-
+if(t.type==="entrada"){
+totalIncome+=t.amount;
+grouped[t.date].income+=t.amount;
 }else{
+totalExpense+=t.amount;
+grouped[t.date].expense+=t.amount;
+}
 
-gastos+=t.valor
+});
 
-if(!gastosPorDia[t.data])gastosPorDia[t.data]=0
-gastosPorDia[t.data]+=t.valor
+let bestDay="";
+let bestValue=0;
+
+let worstDay="";
+let worstValue=0;
+
+Object.keys(grouped).forEach(date=>{
+
+const inc=grouped[date].income;
+const exp=grouped[date].expense;
+
+if(inc>bestValue){
+bestValue=inc;
+bestDay=date;
+}
+
+if(exp>worstValue){
+worstValue=exp;
+worstDay=date;
+}
+
+});
+
+alert(`🐷 RELATÓRIO DO MÊS
+
+Entradas: R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+
+Saídas: R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+
+Saldo: R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}
+
+🔥 Melhor dia de vendas:
+${bestDay?bestDay.split('-').reverse().join('/'):"Nenhum"}
+
+💸 Dia que mais gastou:
+${worstDay?worstDay.split('-').reverse().join('/'):"Nenhum"}
+`);
 
 }
 
-})
+function renderUI(){
 
-let saldo=vendas-gastos
+const list=document.getElementById('transaction-list');
+const filterVal=document.getElementById('month-filter').value;
 
-let melhorDia="-"
-let maiorVenda=0
+list.innerHTML="";
 
-for(let d in vendasPorDia){
-if(vendasPorDia[d]>maiorVenda){
-maiorVenda=vendasPorDia[d]
-melhorDia=d
-}
-}
+let totalIncome=0;
+let totalExpense=0;
 
-let piorDia="-"
-let maiorGasto=0
+const filtered=transactions.filter(t=>t.date.startsWith(filterVal));
 
-for(let d in gastosPorDia){
-if(gastosPorDia[d]>maiorGasto){
-maiorGasto=gastosPorDia[d]
-piorDia=d
-}
+const grouped={};
+
+filtered.forEach(t=>{
+
+if(!grouped[t.date]){
+grouped[t.date]={items:[],dayIncome:0,dayExpense:0};
 }
 
-if(melhorDia!="-")melhorDia=new Date(melhorDia).toLocaleDateString("pt-BR")
-if(piorDia!="-")piorDia=new Date(piorDia).toLocaleDateString("pt-BR")
+grouped[t.date].items.push(t);
 
-let nomeMes=new Date(mes+"-01").toLocaleDateString("pt-BR",{month:"long",year:"numeric"})
-
-relatorio.innerHTML=`
-
-<h2>📊 Relatório do mês</h2>
-
-<p><b>${nomeMes}</b></p>
-
-<br>
-
-<p>💰 Total de vendas: <span style="color:#22c55e">R$ ${vendas.toFixed(2)}</span></p>
-
-<p>💸 Total de gastos: <span style="color:#ef4444">R$ ${gastos.toFixed(2)}</span></p>
-
-<br>
-
-<p>📈 Melhor dia de vendas: <b>${melhorDia}</b></p>
-
-<p>📉 Dia que mais gastou: <b>${piorDia}</b></p>
-
-<br>
-
-<p><b>Saldo final: R$ ${saldo.toFixed(2)}</b></p>
-
-`
-
-}
-
-function compartilharRelatorio(){
-
-let texto=relatorio.innerText
-
-if(!texto){
-alert("Gere o relatório primeiro")
-return
-}
-
-if(navigator.share){
-
-navigator.share({
-title:"Relatório Flowly",
-text:texto
-})
-
+if(t.type==="entrada"){
+totalIncome+=t.amount;
+grouped[t.date].dayIncome+=t.amount;
 }else{
+totalExpense+=t.amount;
+grouped[t.date].dayExpense+=t.amount;
+}
 
-navigator.clipboard.writeText(texto)
+});
 
-alert("Relatório copiado!")
+const sortedDates=Object.keys(grouped).sort((a,b)=>new Date(b)-new Date(a));
+
+sortedDates.forEach(date=>{
+
+const data=grouped[date];
+const dayBalance=data.dayIncome-data.dayExpense;
+const dateBr=date.split('-').reverse().join('/');
+
+list.innerHTML+=`
+
+<div class="day-group">
+
+<strong>📅 ${dateBr}</strong>
+
+<span class="day-total" style="color:${dayBalance>=0?'green':'red'}">
+
+Saldo: R$ ${dayBalance.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+
+</span>
+
+</div>
+
+`;
+
+data.items.forEach(t=>{
+
+const isInc=t.type==="entrada";
+
+list.innerHTML+=`
+
+<div class="transaction-item ${isInc?'item-income':'item-expense'}">
+
+<div class="info">
+<strong>${t.desc}</strong>
+<span>${t.category}</span>
+</div>
+
+<div class="value" style="color:${isInc?'green':'red'}">
+
+${isInc?'+':'-'} R$ ${t.amount.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+
+</div>
+
+</div>
+
+`;
+
+});
+
+});
+
+document.getElementById('total-income').innerText=`R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+document.getElementById('total-expense').innerText=`R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+document.getElementById('total-balance').innerText=`R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
 
 }
 
-}
-
-render()
+window.onload=renderUI;
 
 </script>
 
 </body>
-
 </html>
