@@ -1,337 +1,510 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Porquim IA</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Flowly</title>
 
 <style>
 
 :root{
---primary:#3b82f6;
---income:#10b981;
---expense:#ef4444;
---border:#e2e8f0;
+--bg:#121212;
+--card:#1e1e1e;
+--venda:#22c55e;
+--gasto:#ef4444;
+--gray:#9ca3af;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
 }
 
 body{
-font-family:Arial;
-background:#f1f5f9;
+background:var(--bg);
 display:flex;
 justify-content:center;
-align-items:center;
-min-height:100vh;
-margin:0;
+padding:20px;
 }
 
 .container{
-background:white;
-padding:25px;
-border-radius:15px;
 width:100%;
-max-width:450px;
-box-shadow:0 10px 25px rgba(0,0,0,0.1);
+max-width:700px;
 }
 
-.page{display:none}
-.page.active{display:block}
+header{
+text-align:center;
+font-size:50px;
+font-weight:bold;
+color:white;
+margin-bottom:30px;
+}
+
+form{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+margin-bottom:15px;
+}
 
 input,select,button{
-width:100%;
 padding:12px;
-margin-bottom:10px;
-border-radius:8px;
-border:1px solid var(--border);
+border-radius:10px;
+border:none;
+font-size:14px;
+}
+
+input,select{
+flex:1;
+background:#1f1f1f;
+color:white;
 }
 
 button{
-background:var(--primary);
+background:#22c55e;
 color:white;
 font-weight:bold;
 cursor:pointer;
 }
 
-.balance{
+button:hover{
+opacity:0.9;
+}
+
+#confirmEdit{
+display:none;
+background:#3b82f6;
+width:100%;
+}
+
+.summary{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.card{
+flex:1;
+background:var(--card);
 padding:15px;
-border-radius:10px;
-background:#f8fafc;
-margin-bottom:15px;
+border-radius:12px;
+text-align:center;
+}
+
+.card h3{
+color:var(--gray);
+font-size:14px;
+}
+
+.card span{
+color:white;
+font-size:20px;
+font-weight:bold;
+}
+
+.day{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:8px;
+color:var(--gray);
+margin-top:25px;
+margin-bottom:10px;
+font-size:15px;
+font-weight:bold;
 }
 
 .transaction{
-padding:10px;
-margin-bottom:6px;
-border-radius:6px;
+background:var(--card);
+border-radius:12px;
+padding:15px;
+margin-bottom:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:#f8fafc;
 }
 
-.income{border-left:4px solid var(--income)}
-.expense{border-left:4px solid var(--expense)}
+.desc{
+color:white;
+font-weight:bold;
+}
 
-.delete{
-background:var(--expense);
-padding:5px 8px;
-font-size:12px;
-border:none;
-border-radius:5px;
+.amount{
+font-weight:bold;
+}
+
+.venda .amount{
+color:var(--venda);
+}
+
+.gasto .amount{
+color:var(--gasto);
+}
+
+.actions{
+display:flex;
+gap:10px;
+}
+
+.icon{
 cursor:pointer;
 }
 
+.report{
+margin-top:20px;
+}
+
+#relatorio{
+margin-top:20px;
+background:#1e1e1e;
+padding:20px;
+border-radius:12px;
+color:white;
+text-align:center;
+}
+
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-<div id="page-login" class="page active">
+<header>Flowly</header>
 
-<h2>🐷 Porquim IA</h2>
+<form id="form">
 
-<input type="email" id="login-email" placeholder="Email">
-<input type="password" id="login-pass" placeholder="Senha">
+<input id="desc" placeholder="Descrição" required pattern="[A-Za-zÀ-ÿ ]+">
 
-<button onclick="handleLogin()">Entrar</button>
+<input id="amount" type="number" min="0" step="0.01" placeholder="Valor" required>
 
-<button onclick="showPage('page-register')">Criar conta</button>
-
-</div>
-
-<div id="page-register" class="page">
-
-<h2>Criar Conta</h2>
-
-<input type="text" id="reg-name" placeholder="Nome">
-<input type="email" id="reg-email" placeholder="Email">
-<input type="password" id="reg-pass" placeholder="Senha">
-
-<button onclick="handleRegister()">Cadastrar</button>
-
-<button onclick="showPage('page-login')">Voltar</button>
-
-</div>
-
-<div id="page-app" class="page">
-
-<h3>Olá <span id="display-name"></span></h3>
-
-<button onclick="logout()">Sair</button>
-
-<div class="balance">
-
-<b>Saldo:</b> R$ <span id="saldo">0</span><br>
-
-<span style="color:green">Entradas: R$ <span id="entradas">0</span></span><br>
-
-<span style="color:red">Saídas: R$ <span id="saidas">0</span></span>
-
-</div>
-
-<input type="text" id="desc" placeholder="Descrição">
-
-<input type="number" id="amount" placeholder="Valor">
-
-<input type="date" id="date">
-
-<select id="type">
-<option value="entrada">Entrada</option>
-<option value="saida">Saída</option>
+<select id="category">
+<option value="venda">Venda</option>
+<option value="gasto">Gasto</option>
 </select>
 
-<button onclick="saveTransaction()">Salvar</button>
+<input type="date" id="date" required>
 
-<hr>
+<button type="submit">Adicionar</button>
 
-<div id="transaction-list"></div>
+<button type="button" id="confirmEdit">Confirmar edição</button>
+
+</form>
+
+<div class="summary">
+
+<div class="card">
+<h3>Saldo</h3>
+<span id="saldo">0</span>
+</div>
+
+<div class="card">
+<h3>Total Venda</h3>
+<span id="vendas">0</span>
+</div>
+
+<div class="card">
+<h3>Total Gasto</h3>
+<span id="gastos">0</span>
+</div>
 
 </div>
+
+<div class="report">
+
+<input type="month" id="month">
+
+<button onclick="mostrarRelatorio()">Ver Relatório</button>
+
+<button onclick="compartilharRelatorio()">📤 Compartilhar Relatório</button>
+
+</div>
+
+<div id="lista"></div>
+
+<div id="relatorio"></div>
 
 </div>
 
 <script>
 
-const supabaseUrl="https://rvvyuapnmkblzfrzyjbd.supabase.co"
+let dados=JSON.parse(localStorage.getItem("flowly"))||[]
 
-const supabaseKey="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3dnl1YXBubWtibHpmcnp5amJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzY5OTgsImV4cCI6MjA4ODkxMjk5OH0.5AVdkXHarr1puj_0ZXdpR0zj74j7CVtRnQd35fF2kp8"
+let editIndex=null
 
-const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
+document.getElementById("date").value=new Date().toISOString().split("T")[0]
 
-let currentUser=null
-let transactions=[]
-
-function showPage(page){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"))
-document.getElementById(page).classList.add("active")
+function salvar(){
+localStorage.setItem("flowly",JSON.stringify(dados))
 }
 
-async function handleRegister(){
+function render(){
 
-const name=document.getElementById("reg-name").value.trim()
-const email=document.getElementById("reg-email").value.trim()
-const pass=document.getElementById("reg-pass").value.trim()
+let lista=document.getElementById("lista")
 
-if(!name||!email||!pass){
-alert("Preencha todos os campos")
-return
-}
+lista.innerHTML=""
 
-const {error}=await supabaseClient
-.from("usuarios")
-.insert([{name,email,pass}])
+let saldo=0
+let vendas=0
+let gastos=0
 
-if(error){
-alert("Erro ao cadastrar: "+error.message)
-}else{
-alert("Conta criada!")
-showPage("page-login")
-}
+dados.sort((a,b)=>new Date(a.data)-new Date(b.data))
 
-}
+let ultimoDia=""
 
-async function handleLogin(){
+dados.forEach((t,i)=>{
 
-const email=document.getElementById("login-email").value
-const pass=document.getElementById("login-pass").value
+if(t.data!==ultimoDia){
 
-const {data,error}=await supabaseClient
-.from("usuarios")
-.select("*")
-.eq("email",email)
-.eq("pass",pass)
-.single()
+let day=document.createElement("div")
+day.className="day"
+day.innerHTML="📅 "+new Date(t.data).toLocaleDateString("pt-BR")
 
-if(error||!data){
-alert("Login inválido")
-}else{
-currentUser=data
-localStorage.setItem("userEmail",data.email)
-initApp()
-}
+lista.appendChild(day)
+
+ultimoDia=t.data
 
 }
 
-function logout(){
-localStorage.removeItem("userEmail")
-currentUser=null
-showPage("page-login")
-}
+saldo+=t.tipo=="venda"?t.valor:-t.valor
 
-async function initApp(){
-document.getElementById("display-name").innerText=currentUser.name
-document.getElementById("date").valueAsDate=new Date()
-showPage("page-app")
-loadTransactions()
-}
+if(t.tipo=="venda")vendas+=t.valor
+else gastos+=t.valor
 
-async function saveTransaction(){
+let div=document.createElement("div")
 
-const desc=document.getElementById("desc").value
-const amount=parseFloat(document.getElementById("amount").value)
-const date=document.getElementById("date").value
-const type=document.getElementById("type").value
-
-if(!desc||!amount||!date){
-alert("Dados inválidos")
-return
-}
-
-await supabaseClient
-.from("transacoes")
-.insert([{
-email:currentUser.email,
-descricao:desc,
-amount,
-date,
-type
-}])
-
-document.getElementById("desc").value=""
-document.getElementById("amount").value=""
-
-loadTransactions()
-
-}
-
-async function deleteTransaction(id){
-await supabaseClient
-.from("transacoes")
-.delete()
-.eq("id",id)
-loadTransactions()
-}
-
-async function loadTransactions(){
-
-const {data}=await supabaseClient
-.from("transacoes")
-.select("*")
-.eq("email",currentUser.email)
-
-transactions=data||[]
-renderUI()
-
-}
-
-function renderUI(){
-
-const list=document.getElementById("transaction-list")
-
-let entradas=0
-let saidas=0
-
-list.innerHTML=""
-
-transactions.forEach(t=>{
-
-if(t.type=="entrada") entradas+=t.amount
-if(t.type=="saida") saidas+=t.amount
-
-const div=document.createElement("div")
-
-div.className="transaction "+(t.type=="entrada"?"income":"expense")
+div.className="transaction "+t.tipo
 
 div.innerHTML=`
-<span>${t.descricao} - R$ ${t.amount}</span>
-<button class="delete" onclick="deleteTransaction('${t.id}')">X</button>
+
+<div class="desc">${t.desc}</div>
+
+<div class="amount">
+${t.tipo=="venda"?"+":"-"} R$ ${t.valor.toFixed(2)}
+</div>
+
+<div class="actions">
+
+<span class="icon" onclick="editar(${i})">✏</span>
+<span class="icon" onclick="deletar(${i})">🗑</span>
+
+</div>
+
 `
 
-list.appendChild(div)
+lista.appendChild(div)
 
 })
 
-document.getElementById("entradas").innerText=entradas.toFixed(2)
-document.getElementById("saidas").innerText=saidas.toFixed(2)
-document.getElementById("saldo").innerText=(entradas-saidas).toFixed(2)
+document.getElementById("saldo").innerText=saldo.toFixed(2)
+document.getElementById("vendas").innerText=vendas.toFixed(2)
+document.getElementById("gastos").innerText=gastos.toFixed(2)
+
+salvar()
 
 }
 
-window.onload=async()=>{
+document.getElementById("form").addEventListener("submit",e=>{
 
-const email=localStorage.getItem("userEmail")
+e.preventDefault()
 
-if(email){
+let desc=document.getElementById("desc").value
+let valor=parseFloat(document.getElementById("amount").value)
+let tipo=document.getElementById("category").value
+let data=document.getElementById("date").value
 
-const {data}=await supabaseClient
-.from("usuarios")
-.select("*")
-.eq("email",email)
-.single()
+if(editIndex!==null){
 
-if(data){
-currentUser=data
-initApp()
+dados[editIndex]={desc,valor,tipo,data}
+
+editIndex=null
+
+document.getElementById("confirmEdit").style.display="none"
+
+}else{
+
+dados.push({desc,valor,tipo,data})
+
+}
+
+render()
+
+e.target.reset()
+
+document.getElementById("date").value=new Date().toISOString().split("T")[0]
+
+})
+
+function editar(i){
+
+let t=dados[i]
+
+desc.value=t.desc
+amount.value=t.valor
+category.value=t.tipo
+date.value=t.data
+
+editIndex=i
+
+confirmEdit.style.display="block"
+
+}
+
+confirmEdit.onclick=function(){
+
+let desc=document.getElementById("desc").value
+let valor=parseFloat(document.getElementById("amount").value)
+let tipo=document.getElementById("category").value
+let data=document.getElementById("date").value
+
+dados[editIndex]={desc,valor,tipo,data}
+
+editIndex=null
+
+this.style.display="none"
+
+render()
+
+}
+
+function deletar(i){
+
+if(confirm("Excluir registro?")){
+
+dados.splice(i,1)
+
+render()
+
 }
 
 }
 
+function mostrarRelatorio(){
+
+let mes=month.value
+
+if(!mes){
+alert("Escolha um mês")
+return
 }
+
+let vendas=0
+let gastos=0
+
+let vendasPorDia={}
+let gastosPorDia={}
+
+dados
+.filter(t=>t.data.startsWith(mes))
+.forEach(t=>{
+
+if(t.tipo=="venda"){
+
+vendas+=t.valor
+
+if(!vendasPorDia[t.data])vendasPorDia[t.data]=0
+vendasPorDia[t.data]+=t.valor
+
+}else{
+
+gastos+=t.valor
+
+if(!gastosPorDia[t.data])gastosPorDia[t.data]=0
+gastosPorDia[t.data]+=t.valor
+
+}
+
+})
+
+let saldo=vendas-gastos
+
+let melhorDia="-"
+let maiorVenda=0
+
+for(let d in vendasPorDia){
+if(vendasPorDia[d]>maiorVenda){
+maiorVenda=vendasPorDia[d]
+melhorDia=d
+}
+}
+
+let piorDia="-"
+let maiorGasto=0
+
+for(let d in gastosPorDia){
+if(gastosPorDia[d]>maiorGasto){
+maiorGasto=gastosPorDia[d]
+piorDia=d
+}
+}
+
+if(melhorDia!="-")melhorDia=new Date(melhorDia).toLocaleDateString("pt-BR")
+if(piorDia!="-")piorDia=new Date(piorDia).toLocaleDateString("pt-BR")
+
+let nomeMes=new Date(mes+"-01").toLocaleDateString("pt-BR",{month:"long",year:"numeric"})
+
+relatorio.innerHTML=`
+
+<h2>📊 Relatório do mês</h2>
+
+<p><b>${nomeMes}</b></p>
+
+<br>
+
+<p>💰 Total de vendas: <span style="color:#22c55e">R$ ${vendas.toFixed(2)}</span></p>
+
+<p>💸 Total de gastos: <span style="color:#ef4444">R$ ${gastos.toFixed(2)}</span></p>
+
+<br>
+
+<p>📈 Melhor dia de vendas: <b>${melhorDia}</b></p>
+
+<p>📉 Dia que mais gastou: <b>${piorDia}</b></p>
+
+<br>
+
+<p><b>Saldo final: R$ ${saldo.toFixed(2)}</b></p>
+
+`
+
+}
+
+function compartilharRelatorio(){
+
+let texto=relatorio.innerText
+
+if(!texto){
+alert("Gere o relatório primeiro")
+return
+}
+
+if(navigator.share){
+
+navigator.share({
+title:"Relatório Flowly",
+text:texto
+})
+
+}else{
+
+navigator.clipboard.writeText(texto)
+
+alert("Relatório copiado!")
+
+}
+
+}
+
+render()
 
 </script>
 
 </body>
+
 </html>
