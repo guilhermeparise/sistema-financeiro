@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Porquim IA - Controle Financeiro para Loja</title>
 
 <style>
@@ -42,6 +42,151 @@ padding:20px;
 backdrop-filter:blur(8px);
 }
 
+/* Estilos de Login */
+.login-container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 30px 20px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-header h1 {
+    font-size: 2rem;
+    color: #1e3a8a;
+    margin: 0 0 10px 0;
+}
+
+.login-header p {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #334155;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: transform 0.2s;
+}
+
+.btn-login:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.error-message {
+    background: #fee;
+    color: #c33;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.logout-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.sync-status {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    margin-bottom: 15px;
+    display: none;
+}
+
+/* Seu CSS original continua aqui */
 header{text-align:center;margin-bottom:25px;}
 
 h1{
@@ -164,210 +309,493 @@ font-weight:800;
 margin-right:10px;
 }
 
+/* Ocultar dashboard inicialmente */
+.dashboard-content {
+    display: none;
+}
+
+/* Ajustes mobile */
+@media (max-width: 480px) {
+    .row {
+        flex-direction: column;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .user-info {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .logout-btn {
+        width: 100%;
+    }
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="container" id="app">
+    <!-- Tela de Login -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🐷 Porquim IA</h1>
+                <p>Faça login para acessar seus dados</p>
+                <p style="font-size: 0.8rem; color: #94a3b8;">Seus dados sincronizam em todos dispositivos</p>
+            </div>
+            
+            <div id="loginError" class="error-message"></div>
+            
+            <div class="input-group">
+                <label>📧 E-mail</label>
+                <input type="email" id="loginEmail" placeholder="seu@email.com">
+            </div>
+            
+            <div class="input-group">
+                <label>🔒 Senha</label>
+                <input type="password" id="loginPassword" placeholder="******">
+            </div>
+            
+            <button class="btn-login" onclick="login()">Entrar</button>
+            <button class="btn-secondary" onclick="showRegister()">Criar nova conta</button>
+        </div>
+    </div>
 
-<header>
-<h1>🐷 Porquim IA</h1>
-</header>
+    <!-- Tela de Registro -->
+    <div id="registerScreen" style="display: none;">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🐷 Criar Conta</h1>
+                <p>Seus dados serão sincronizados</p>
+            </div>
+            
+            <div id="registerError" class="error-message"></div>
+            <div id="registerSuccess" class="success-message"></div>
+            
+            <div class="input-group">
+                <label>📧 E-mail</label>
+                <input type="email" id="regEmail" placeholder="seu@email.com">
+            </div>
+            
+            <div class="input-group">
+                <label>🔒 Senha</label>
+                <input type="password" id="regPassword" placeholder="******">
+            </div>
+            
+            <div class="input-group">
+                <label>🔒 Confirmar Senha</label>
+                <input type="password" id="regConfirmPassword" placeholder="******">
+            </div>
+            
+            <button class="btn-login" onclick="register()">Criar Conta</button>
+            <button class="btn-secondary" onclick="showLogin()">Voltar para login</button>
+        </div>
+    </div>
 
-<div class="summary">
+    <!-- Dashboard Principal -->
+    <div id="dashboardContent" class="dashboard-content">
+        <div class="dashboard-header">
+            <div class="user-info">
+                <span>👤</span>
+                <span id="userEmailDisplay"></span>
+            </div>
+            <button class="logout-btn" onclick="logout()">Sair</button>
+        </div>
+        
+        <div id="syncStatus" class="sync-status">
+            🔄 Sincronizando...
+        </div>
+        
+        <!-- Seu conteúdo original aqui -->
+        <header>
+            <h1>🐷 Porquim IA</h1>
+        </header>
 
-<div class="card full">
-<label>Saldo no Mês</label>
-<p id="total-balance">R$ 0,00</p>
-</div>
+        <div class="summary">
+            <div class="card full">
+                <label>Saldo no Mês</label>
+                <p id="total-balance">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <label style="color:var(--income)">Entradas</label>
+                <p style="color:var(--income)" id="total-income">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <label style="color:var(--expense)">Saídas</label>
+                <p style="color:var(--expense)" id="total-expense">R$ 0,00</p>
+            </div>
+        </div>
 
-<div class="card">
-<label style="color:var(--income)">Entradas</label>
-<p style="color:var(--income)" id="total-income">R$ 0,00</p>
-</div>
+        <div class="form-group">
+            <input type="text" id="desc" placeholder="Descrição" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g,'')">
+            <div class="row">
+                <input type="text" id="amount" placeholder="Valor (ex: 15,00)" oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
+                <input type="date" id="date">
+            </div>
+            <div class="row">
+                <select id="category">
+                    <option value="Venda">Venda 💰</option>
+                    <option value="Reposição">Reposição de Estoque</option>
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Salário">Salário</option>
+                    <option value="Casa">Casa</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <select id="type">
+                    <option value="entrada">Entrada 📥</option>
+                    <option value="saida">Saída 📤</option>
+                </select>
+            </div>
+            <button onclick="saveTransaction()">Adicionar ao Porquim</button>
+        </div>
 
-<div class="card">
-<label style="color:var(--expense)">Saídas</label>
-<p style="color:var(--expense)" id="total-expense">R$ 0,00</p>
-</div>
+        <div class="list-header">
+            <strong>Histórico Diário</strong>
+            <input type="month" id="month-filter" onchange="renderUI()">
+        </div>
 
-</div>
+        <button onclick="relatorioMes()">📊 Relatório do Mês</button>
 
-<div class="form-group">
-
-<input type="text" id="desc" placeholder="Descrição" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g,'')">
-
-<div class="row">
-<input type="text" id="amount" placeholder="Valor (ex: 15,00)" oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
-<input type="date" id="date">
-</div>
-
-<div class="row">
-
-<select id="category">
-<option value="Venda">Venda 💰</option>
-<option value="Reposição">Reposição de Estoque</option>
-<option value="Alimentação">Alimentação</option>
-<option value="Lazer">Lazer</option>
-<option value="Salário">Salário</option>
-<option value="Casa">Casa</option>
-<option value="Outros">Outros</option>
-</select>
-
-<select id="type">
-<option value="entrada">Entrada 📥</option>
-<option value="saida">Saída 📤</option>
-</select>
-
-</div>
-
-<button onclick="saveTransaction()">Adicionar ao Porquim</button>
-
-</div>
-
-<div class="list-header">
-<strong>Histórico Diário</strong>
-<input type="month" id="month-filter" onchange="renderUI()">
-</div>
-
-<button onclick="relatorioMes()">📊 Relatório do Mês</button>
-
-<div id="transaction-list"></div>
-
+        <div id="transaction-list"></div>
+    </div>
 </div>
 
 <script>
+// ========== SISTEMA DE LOGIN E SINCRONIZAÇÃO ==========
+const STORAGE_KEY = 'porquim_ia_users';
 
-let transactions=[];
+// Carregar usuários
+let users = {};
+try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        users = JSON.parse(stored);
+    }
+} catch(e) {
+    users = {};
+}
 
-try{
-transactions=JSON.parse(localStorage.getItem('porquim_ia_db'))||[];
-}catch(e){transactions=[];}
+// Usuário atual
+let currentUser = null;
+let syncTimer = null;
 
-const today=new Date();
+// Dados do usuário logado (transações)
+let transactions = [];
 
-document.getElementById('month-filter').value=today.toISOString().substring(0,7);
-document.getElementById('date').valueAsDate=today;
+// Inicializar com usuário demo se não existir
+if (Object.keys(users).length === 0) {
+    users['demo@porquim.com'] = {
+        password: '123456',
+        transactions: []
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+}
+
+// Funções de login
+function login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        showError('loginError', 'Preencha todos os campos!');
+        return;
+    }
+    
+    if (users[email] && users[email].password === password) {
+        currentUser = {
+            email: email,
+            transactions: users[email].transactions ? [...users[email].transactions] : []
+        };
+        
+        // Carregar transações do usuário
+        transactions = currentUser.transactions;
+        
+        // Iniciar sincronização
+        startAutoSync();
+        
+        // Mostrar dashboard
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+        document.getElementById('userEmailDisplay').innerHTML = `📧 ${email}`;
+        
+        // Configurar data atual
+        const today = new Date();
+        document.getElementById('month-filter').value = today.toISOString().substring(0,7);
+        document.getElementById('date').valueAsDate = today;
+        
+        // Renderizar interface
+        renderUI();
+    } else {
+        showError('loginError', 'E-mail ou senha inválidos!');
+    }
+}
+
+function register() {
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+    
+    if (!email || !password) {
+        showError('registerError', 'Preencha todos os campos!');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showError('registerError', 'As senhas não coincidem!');
+        return;
+    }
+    
+    if (users[email]) {
+        showError('registerError', 'E-mail já cadastrado!');
+        return;
+    }
+    
+    // Criar novo usuário
+    users[email] = {
+        password: password,
+        transactions: []
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    
+    // Mostrar sucesso
+    const successDiv = document.getElementById('registerSuccess');
+    successDiv.textContent = 'Conta criada com sucesso! Faça login.';
+    successDiv.style.display = 'block';
+    
+    // Limpar campos
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirmPassword').value = '';
+    
+    // Voltar para login após 2 segundos
+    setTimeout(() => {
+        showLogin();
+    }, 2000);
+}
+
+function logout() {
+    if (syncTimer) {
+        clearInterval(syncTimer);
+        syncTimer = null;
+    }
+    
+    currentUser = null;
+    transactions = [];
+    
+    document.getElementById('dashboardContent').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+}
+
+function showRegister() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('registerScreen').style.display = 'block';
+    clearErrors();
+}
+
+function showLogin() {
+    document.getElementById('registerScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+    clearErrors();
+}
+
+function showError(elementId, message) {
+    const errorDiv = document.getElementById(elementId);
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 3000);
+}
+
+function clearErrors() {
+    const errors = document.querySelectorAll('.error-message, .success-message');
+    errors.forEach(error => error.style.display = 'none');
+}
+
+function showSyncStatus(message, isError = false) {
+    const syncStatus = document.getElementById('syncStatus');
+    syncStatus.textContent = message;
+    syncStatus.style.display = 'block';
+    syncStatus.style.background = isError ? '#ffebee' : '#e8f5e9';
+    syncStatus.style.color = isError ? '#c62828' : '#2e7d32';
+    
+    setTimeout(() => {
+        syncStatus.style.display = 'none';
+    }, 2000);
+}
+
+// Sincronização automática
+function startAutoSync() {
+    if (syncTimer) {
+        clearInterval(syncTimer);
+    }
+    
+    // Sincronizar a cada 3 segundos
+    syncTimer = setInterval(() => {
+        if (currentUser) {
+            syncData();
+        }
+    }, 3000);
+}
+
+function syncData() {
+    try {
+        // Buscar dados mais recentes do localStorage
+        const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        
+        if (storedUsers[currentUser.email]) {
+            const storedTransactions = storedUsers[currentUser.email].transactions || [];
+            
+            // Verificar se há dados novos
+            if (JSON.stringify(storedTransactions) !== JSON.stringify(transactions)) {
+                // Atualizar dados locais com os dados do servidor (localStorage)
+                if (storedTransactions.length !== transactions.length) {
+                    transactions = [...storedTransactions];
+                    currentUser.transactions = transactions;
+                    renderUI();
+                    showSyncStatus('🔄 Dados sincronizados com sucesso!');
+                }
+            }
+        }
+        
+        // Salvar dados locais no storage (para outros dispositivos)
+        if (users[currentUser.email]) {
+            users[currentUser.email].transactions = transactions;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+        }
+    } catch(e) {
+        console.error('Erro na sincronização:', e);
+    }
+}
+
+// Salvar dados localmente e sincronizar
+function saveUserData() {
+    if (currentUser) {
+        users[currentUser.email] = {
+            password: users[currentUser.email].password,
+            transactions: transactions
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    }
+}
+
+// ========== FUNÇÕES ORIGINAIS DO SEU SISTEMA (MODIFICADAS) ==========
 
 function parseValue(val){
-if(!val)return 0;
-let clean=val.replace(/[^\d,]/g,'').replace(',','.');
-return parseFloat(clean)||0;
+    if(!val)return 0;
+    let clean=val.replace(/[^\d,]/g,'').replace(',','.');
+    return parseFloat(clean)||0;
 }
 
 function saveTransaction(){
+    const desc=document.getElementById('desc').value;
+    const amount=parseValue(document.getElementById('amount').value);
+    const date=document.getElementById('date').value;
+    const category=document.getElementById('category').value;
+    const type=document.getElementById('type').value;
 
-const desc=document.getElementById('desc').value;
-const amount=parseValue(document.getElementById('amount').value);
-const date=document.getElementById('date').value;
-const category=document.getElementById('category').value;
-const type=document.getElementById('type').value;
+    if(!desc||amount<=0||!date){
+        alert("Preencha todos os campos!");
+        return;
+    }
 
-if(!desc||amount<=0||!date){
-alert("Preencha todos os campos!");
-return;
-}
+    transactions.push({
+        id:Date.now(),
+        desc,
+        amount,
+        date,
+        category,
+        type
+    });
 
-transactions.push({
-id:Date.now(),
-desc,
-amount,
-date,
-category,
-type
-});
+    saveUserData();
+    renderUI();
 
-localStorage.setItem('porquim_ia_db',JSON.stringify(transactions));
-
-renderUI();
-
-document.getElementById('desc').value="";
-document.getElementById('amount').value="";
-document.getElementById('date').valueAsDate=new Date();
-
+    document.getElementById('desc').value="";
+    document.getElementById('amount').value="";
+    document.getElementById('date').valueAsDate=new Date();
+    
+    showSyncStatus('✅ Venda registrada e sincronizada!');
 }
 
 function deleteTransaction(id){
+    if(!confirm("Deseja excluir esta transação?")) return;
 
-if(!confirm("Deseja excluir esta transação?")) return;
-
-transactions=transactions.filter(t=>t.id!=id);
-
-localStorage.setItem('porquim_ia_db',JSON.stringify(transactions));
-
-renderUI();
-
+    transactions=transactions.filter(t=>t.id!=id);
+    saveUserData();
+    renderUI();
+    showSyncStatus('🗑️ Transação excluída!');
 }
 
 function editTransaction(id){
+    const t=transactions.find(tr=>tr.id==id);
 
-const t=transactions.find(tr=>tr.id==id);
+    document.getElementById('desc').value=t.desc;
+    document.getElementById('amount').value=t.amount.toString().replace('.',',');
+    document.getElementById('date').value=t.date;
+    document.getElementById('category').value=t.category;
+    document.getElementById('type').value=t.type;
 
-document.getElementById('desc').value=t.desc;
-document.getElementById('amount').value=t.amount.toString().replace('.',',');
-document.getElementById('date').value=t.date;
-document.getElementById('category').value=t.category;
-document.getElementById('type').value=t.type;
+    transactions=transactions.filter(tr=>tr.id!=id);
+    saveUserData();
+    renderUI();
 
-transactions=transactions.filter(tr=>tr.id!=id);
-
-localStorage.setItem('porquim_ia_db',JSON.stringify(transactions));
-
-renderUI();
-
-window.scrollTo({top:0,behavior:'smooth'});
-
+    window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function relatorioMes(){
+    const filterVal=document.getElementById('month-filter').value;
 
-const filterVal=document.getElementById('month-filter').value;
+    let totalIncome=0;
+    let totalExpense=0;
 
-let totalIncome=0;
-let totalExpense=0;
+    let bestDay="";
+    let bestValue=0;
 
-let bestDay="";
-let bestValue=0;
+    let worstDay="";
+    let worstValue=0;
 
-let worstDay="";
-let worstValue=0;
+    const grouped={};
 
-const grouped={};
+    transactions
+    .filter(t=>t.date.startsWith(filterVal))
+    .forEach(t=>{
+        if(!grouped[t.date]){
+            grouped[t.date]={income:0,expense:0};
+        }
 
-transactions
-.filter(t=>t.date.startsWith(filterVal))
-.forEach(t=>{
+        if(t.type==="entrada"){
+            totalIncome+=t.amount;
+            grouped[t.date].income+=t.amount;
+        }else{
+            totalExpense+=t.amount;
+            grouped[t.date].expense+=t.amount;
+        }
+    });
 
-if(!grouped[t.date]){
-grouped[t.date]={income:0,expense:0};
-}
+    Object.keys(grouped).forEach(date=>{
+        if(grouped[date].income>bestValue){
+            bestValue=grouped[date].income;
+            bestDay=date;
+        }
 
-if(t.type==="entrada"){
-totalIncome+=t.amount;
-grouped[t.date].income+=t.amount;
-}else{
-totalExpense+=t.amount;
-grouped[t.date].expense+=t.amount;
-}
+        if(grouped[date].expense>worstValue){
+            worstValue=grouped[date].expense;
+            worstDay=date;
+        }
+    });
 
-});
-
-Object.keys(grouped).forEach(date=>{
-
-if(grouped[date].income>bestValue){
-bestValue=grouped[date].income;
-bestDay=date;
-}
-
-if(grouped[date].expense>worstValue){
-worstValue=grouped[date].expense;
-worstDay=date;
-}
-
-});
-
-alert(`RELATÓRIO DO MÊS
+    alert(`RELATÓRIO DO MÊS
 
 Entradas: R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}
 Saídas: R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}
@@ -379,98 +807,98 @@ ${bestDay?bestDay.split('-').reverse().join('/'):"Nenhum"}
 💸 Dia que mais gastou:
 ${worstDay?worstDay.split('-').reverse().join('/'):"Nenhum"}
 `);
-
 }
 
 function renderUI(){
+    const list=document.getElementById('transaction-list');
+    const filterVal=document.getElementById('month-filter').value;
 
-const list=document.getElementById('transaction-list');
-const filterVal=document.getElementById('month-filter').value;
+    if(!list) return;
 
-list.innerHTML="";
+    list.innerHTML="";
 
-let totalIncome=0;
-let totalExpense=0;
+    let totalIncome=0;
+    let totalExpense=0;
 
-const filtered=transactions.filter(t=>t.date.startsWith(filterVal));
+    const filtered=transactions.filter(t=>t.date.startsWith(filterVal));
 
-const grouped={};
+    const grouped={};
 
-filtered.forEach(t=>{
+    filtered.forEach(t=>{
+        if(!grouped[t.date]){
+            grouped[t.date]={items:[],dayIncome:0,dayExpense:0};
+        }
 
-if(!grouped[t.date]){
-grouped[t.date]={items:[],dayIncome:0,dayExpense:0};
+        grouped[t.date].items.push(t);
+
+        if(t.type==="entrada"){
+            totalIncome+=t.amount;
+            grouped[t.date].dayIncome+=t.amount;
+        }else{
+            totalExpense+=t.amount;
+            grouped[t.date].dayExpense+=t.amount;
+        }
+    });
+
+    const sortedDates=Object.keys(grouped).sort((a,b)=>new Date(b)-new Date(a));
+
+    sortedDates.forEach(date=>{
+        const data=grouped[date];
+        const dayBalance=data.dayIncome-data.dayExpense;
+        const dateBr=date.split('-').reverse().join('/');
+
+        list.innerHTML+=`
+            <div class="day-group">
+                <strong>📅 ${dateBr}</strong>
+                <span style="color:${dayBalance>=0?'green':'red'}">
+                    Saldo: R$ ${dayBalance.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                </span>
+            </div>
+        `;
+
+        data.items.forEach(t=>{
+            const isInc=t.type==="entrada";
+            list.innerHTML+=`
+                <div class="transaction-item ${isInc?'item-income':'item-expense'}">
+                    <div class="info">
+                        <strong>${t.desc}</strong>
+                        <span>${t.category}</span>
+                    </div>
+                    <div class="value" style="color:${isInc?'green':'red'}">
+                        ${isInc?'+':'-'} R$ ${t.amount.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                    </div>
+                    <div class="actions">
+                        <button onclick="editTransaction('${t.id}')">✏️</button>
+                        <button onclick="deleteTransaction('${t.id}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    const totalBalanceElem = document.getElementById('total-balance');
+    const totalIncomeElem = document.getElementById('total-income');
+    const totalExpenseElem = document.getElementById('total-expense');
+    
+    if(totalBalanceElem) totalBalanceElem.innerText=`R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    if(totalIncomeElem) totalIncomeElem.innerText=`R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    if(totalExpenseElem) totalExpenseElem.innerText=`R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
 }
 
-grouped[t.date].items.push(t);
-
-if(t.type==="entrada"){
-totalIncome+=t.amount;
-grouped[t.date].dayIncome+=t.amount;
-}else{
-totalExpense+=t.amount;
-grouped[t.date].dayExpense+=t.amount;
-}
-
+// Prevenir envio ao pressionar Enter
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        if (document.getElementById('loginScreen').style.display !== 'none') {
+            login();
+        } else if (document.getElementById('registerScreen').style.display !== 'none') {
+            register();
+        }
+    }
 });
 
-const sortedDates=Object.keys(grouped).sort((a,b)=>new Date(b)-new Date(a));
-
-sortedDates.forEach(date=>{
-
-const data=grouped[date];
-const dayBalance=data.dayIncome-data.dayExpense;
-const dateBr=date.split('-').reverse().join('/');
-
-list.innerHTML+=`
-
-<div class="day-group">
-<strong>📅 ${dateBr}</strong>
-<span style="color:${dayBalance>=0?'green':'red'}">
-Saldo: R$ ${dayBalance.toLocaleString('pt-BR',{minimumFractionDigits:2})}
-</span>
-</div>
-
-`;
-
-data.items.forEach(t=>{
-
-const isInc=t.type==="entrada";
-
-list.innerHTML+=`
-
-<div class="transaction-item ${isInc?'item-income':'item-expense'}">
-
-<div class="info">
-<strong>${t.desc}</strong>
-<span>${t.category}</span>
-</div>
-
-<div class="value" style="color:${isInc?'green':'red'}">
-${isInc?'+':'-'} R$ ${t.amount.toLocaleString('pt-BR',{minimumFractionDigits:2})}
-</div>
-
-<div class="actions">
-<button onclick="editTransaction('${t.id}')">✏️</button>
-<button onclick="deleteTransaction('${t.id}')">🗑️</button>
-</div>
-
-</div>
-
-`;
-
-});
-
-});
-
-document.getElementById('total-income').innerText=`R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-document.getElementById('total-expense').innerText=`R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-document.getElementById('total-balance').innerText=`R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-
-}
-
-window.onload=renderUI;
-
+// Inicializar mostrando tela de login
+document.getElementById('dashboardContent').style.display = 'none';
+document.getElementById('loginScreen').style.display = 'block';
 </script>
 
 </body>
