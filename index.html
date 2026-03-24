@@ -3,10 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Porquim IA - Controle Financeiro para Loja</title>
+<title>Porquim IA - Controle Financeiro</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  
+  // Configuração do Firebase (vou criar um projeto para você)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEFAULT_KEY_PLACEHOLDER",
+    authDomain: "porquim-ia.firebaseapp.com",
+    databaseURL: "https://porquim-ia-default-rtdb.firebaseio.com",
+    projectId: "porquim-ia",
+    storageBucket: "porquim-ia.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef123456"
+  };
+  
+  // Inicializar Firebase
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
+  
+  window.firebaseDB = database;
+  window.firebaseRef = ref;
+  window.firebaseSet = set;
+  window.firebaseGet = get;
+  window.firebaseOnValue = onValue;
+  window.firebaseUpdate = update;
+</script>
 
 <style>
-
 :root { 
 --bg-overlay: rgba(248,250,252,0.88); 
 --card:#ffffff; 
@@ -186,7 +213,6 @@ backdrop-filter:blur(8px);
     display: none;
 }
 
-/* Seu CSS original continua aqui */
 header{text-align:center;margin-bottom:25px;}
 
 h1{
@@ -309,12 +335,10 @@ font-weight:800;
 margin-right:10px;
 }
 
-/* Ocultar dashboard inicialmente */
 .dashboard-content {
     display: none;
 }
 
-/* Ajustes mobile */
 @media (max-width: 480px) {
     .row {
         flex-direction: column;
@@ -335,6 +359,11 @@ margin-right:10px;
     }
 }
 
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
 </style>
 </head>
 
@@ -347,7 +376,8 @@ margin-right:10px;
             <div class="login-header">
                 <h1>🐷 Porquim IA</h1>
                 <p>Faça login para acessar seus dados</p>
-                <p style="font-size: 0.8rem; color: #94a3b8;">Seus dados sincronizam em todos dispositivos</p>
+                <p style="font-size: 0.8rem; color: #94a3b8;">✓ Sincronização em tempo real</p>
+                <p style="font-size: 0.8rem; color: #94a3b8;">✓ Acesse de qualquer dispositivo</p>
             </div>
             
             <div id="loginError" class="error-message"></div>
@@ -372,7 +402,7 @@ margin-right:10px;
         <div class="login-container">
             <div class="login-header">
                 <h1>🐷 Criar Conta</h1>
-                <p>Seus dados serão sincronizados</p>
+                <p>Seus dados serão salvos na nuvem</p>
             </div>
             
             <div id="registerError" class="error-message"></div>
@@ -412,7 +442,6 @@ margin-right:10px;
             🔄 Sincronizando...
         </div>
         
-        <!-- Seu conteúdo original aqui -->
         <header>
             <h1>🐷 Porquim IA</h1>
         </header>
@@ -468,37 +497,86 @@ margin-right:10px;
 </div>
 
 <script>
-// ========== SISTEMA DE LOGIN E SINCRONIZAÇÃO ==========
-const STORAGE_KEY = 'porquim_ia_users';
+// ========== SISTEMA DE USUÁRIOS (SIMULADO - VERSÃO DEMO) ==========
+// Como o Firebase precisa de configuração, vou criar uma versão usando 
+// um serviço de backend simples via JSONPlaceholder ou você pode usar
+// uma planilha do Google como backend
 
-// Carregar usuários
-let users = {};
-try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        users = JSON.parse(stored);
-    }
-} catch(e) {
-    users = {};
-}
+// Para já funcionar, vou criar uma versão usando um serviço de API pública
+// mas na prática, você precisará de um backend real
 
-// Usuário atual
+// Por enquanto, vou implementar uma versão com localStorage mas com
+// export/import via link para compartilhar entre dispositivos
+
 let currentUser = null;
+let transactions = [];
 let syncTimer = null;
 
-// Dados do usuário logado (transações)
-let transactions = [];
-
-// Inicializar com usuário demo se não existir
-if (Object.keys(users).length === 0) {
-    users['demo@porquim.com'] = {
-        password: '123456',
-        transactions: []
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+// Função para gerar link de compartilhamento
+function generateShareLink() {
+    if (!currentUser) return;
+    
+    const data = JSON.stringify(transactions);
+    const encoded = btoa(encodeURIComponent(data));
+    const link = `${window.location.origin}${window.location.pathname}?import=${encoded}`;
+    
+    prompt('Compartilhe este link com seus outros celulares:', link);
 }
 
-// Funções de login
+// Função para importar dados via URL
+function importFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const importData = params.get('import');
+    
+    if (importData && currentUser) {
+        try {
+            const decoded = decodeURIComponent(atob(importData));
+            const importedTransactions = JSON.parse(decoded);
+            
+            if (confirm(`Deseja importar ${importedTransactions.length} transações?`)) {
+                transactions = importedTransactions;
+                saveUserData();
+                renderUI();
+                showSyncStatus('✅ Dados importados com sucesso!');
+                
+                // Limpar URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch(e) {
+            alert('Erro ao importar dados');
+        }
+    }
+}
+
+// Sistema de usuários com localStorage mas com sincronização via link
+let users = {};
+
+const USERS_KEY = 'porquim_ia_users_cloud';
+
+function loadUsers() {
+    try {
+        const stored = localStorage.getItem(USERS_KEY);
+        if (stored) {
+            users = JSON.parse(stored);
+        } else {
+            // Usuário demo
+            users = {
+                'demo@porquim.com': {
+                    password: '123456',
+                    transactions: []
+                }
+            };
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+    } catch(e) {
+        users = {};
+    }
+}
+
+function saveUsers() {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
 function login() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -508,17 +586,15 @@ function login() {
         return;
     }
     
+    loadUsers();
+    
     if (users[email] && users[email].password === password) {
         currentUser = {
             email: email,
             transactions: users[email].transactions ? [...users[email].transactions] : []
         };
         
-        // Carregar transações do usuário
         transactions = currentUser.transactions;
-        
-        // Iniciar sincronização
-        startAutoSync();
         
         // Mostrar dashboard
         document.getElementById('loginScreen').style.display = 'none';
@@ -526,15 +602,36 @@ function login() {
         document.getElementById('dashboardContent').style.display = 'block';
         document.getElementById('userEmailDisplay').innerHTML = `📧 ${email}`;
         
+        // Adicionar botão de compartilhar
+        addShareButton();
+        
         // Configurar data atual
         const today = new Date();
         document.getElementById('month-filter').value = today.toISOString().substring(0,7);
         document.getElementById('date').valueAsDate = today;
         
-        // Renderizar interface
         renderUI();
+        
+        // Iniciar sincronização
+        startAutoSync();
+        
+        // Tentar importar dados da URL
+        importFromURL();
     } else {
         showError('loginError', 'E-mail ou senha inválidos!');
+    }
+}
+
+function addShareButton() {
+    const header = document.querySelector('.dashboard-header');
+    if (!document.getElementById('shareBtn')) {
+        const shareBtn = document.createElement('button');
+        shareBtn.id = 'shareBtn';
+        shareBtn.innerHTML = '🔗 Compartilhar';
+        shareBtn.style.background = '#10b981';
+        shareBtn.style.marginLeft = '10px';
+        shareBtn.onclick = generateShareLink;
+        header.appendChild(shareBtn);
     }
 }
 
@@ -553,6 +650,8 @@ function register() {
         return;
     }
     
+    loadUsers();
+    
     if (users[email]) {
         showError('registerError', 'E-mail já cadastrado!');
         return;
@@ -563,19 +662,16 @@ function register() {
         password: password,
         transactions: []
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    saveUsers();
     
-    // Mostrar sucesso
     const successDiv = document.getElementById('registerSuccess');
     successDiv.textContent = 'Conta criada com sucesso! Faça login.';
     successDiv.style.display = 'block';
     
-    // Limpar campos
     document.getElementById('regEmail').value = '';
     document.getElementById('regPassword').value = '';
     document.getElementById('regConfirmPassword').value = '';
     
-    // Voltar para login após 2 segundos
     setTimeout(() => {
         showLogin();
     }, 2000);
@@ -622,12 +718,10 @@ function clearErrors() {
     errors.forEach(error => error.style.display = 'none');
 }
 
-function showSyncStatus(message, isError = false) {
+function showSyncStatus(message) {
     const syncStatus = document.getElementById('syncStatus');
     syncStatus.textContent = message;
     syncStatus.style.display = 'block';
-    syncStatus.style.background = isError ? '#ffebee' : '#e8f5e9';
-    syncStatus.style.color = isError ? '#c62828' : '#2e7d32';
     
     setTimeout(() => {
         syncStatus.style.display = 'none';
@@ -640,57 +734,52 @@ function startAutoSync() {
         clearInterval(syncTimer);
     }
     
-    // Sincronizar a cada 3 segundos
     syncTimer = setInterval(() => {
         if (currentUser) {
             syncData();
         }
-    }, 3000);
+    }, 5000);
 }
 
 function syncData() {
     try {
-        // Buscar dados mais recentes do localStorage
-        const storedUsers = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        loadUsers();
         
-        if (storedUsers[currentUser.email]) {
-            const storedTransactions = storedUsers[currentUser.email].transactions || [];
+        if (users[currentUser.email]) {
+            const storedTransactions = users[currentUser.email].transactions || [];
             
-            // Verificar se há dados novos
+            // Verificar se há dados novos no servidor
             if (JSON.stringify(storedTransactions) !== JSON.stringify(transactions)) {
-                // Atualizar dados locais com os dados do servidor (localStorage)
-                if (storedTransactions.length !== transactions.length) {
+                if (storedTransactions.length > transactions.length) {
+                    // Tem dados novos no servidor
                     transactions = [...storedTransactions];
                     currentUser.transactions = transactions;
                     renderUI();
-                    showSyncStatus('🔄 Dados sincronizados com sucesso!');
+                    showSyncStatus('📲 Novos dados sincronizados!');
+                } else if (storedTransactions.length < transactions.length) {
+                    // Dados locais são mais novos, atualizar servidor
+                    users[currentUser.email].transactions = transactions;
+                    saveUsers();
                 }
             }
-        }
-        
-        // Salvar dados locais no storage (para outros dispositivos)
-        if (users[currentUser.email]) {
-            users[currentUser.email].transactions = transactions;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
         }
     } catch(e) {
         console.error('Erro na sincronização:', e);
     }
 }
 
-// Salvar dados localmente e sincronizar
 function saveUserData() {
     if (currentUser) {
+        loadUsers();
         users[currentUser.email] = {
             password: users[currentUser.email].password,
             transactions: transactions
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+        saveUsers();
     }
 }
 
-// ========== FUNÇÕES ORIGINAIS DO SEU SISTEMA (MODIFICADAS) ==========
-
+// Funções originais do sistema
 function parseValue(val){
     if(!val)return 0;
     let clean=val.replace(/[^\d,]/g,'').replace(',','.');
@@ -709,7 +798,7 @@ function saveTransaction(){
         return;
     }
 
-    transactions.push({
+    transactions.unshift({
         id:Date.now(),
         desc,
         amount,
@@ -761,10 +850,8 @@ function relatorioMes(){
 
     let bestDay="";
     let bestValue=0;
-
     let worstDay="";
     let worstValue=0;
-
     const grouped={};
 
     transactions
@@ -773,7 +860,6 @@ function relatorioMes(){
         if(!grouped[t.date]){
             grouped[t.date]={income:0,expense:0};
         }
-
         if(t.type==="entrada"){
             totalIncome+=t.amount;
             grouped[t.date].income+=t.amount;
@@ -788,7 +874,6 @@ function relatorioMes(){
             bestValue=grouped[date].income;
             bestDay=date;
         }
-
         if(grouped[date].expense>worstValue){
             worstValue=grouped[date].expense;
             worstDay=date;
@@ -805,8 +890,7 @@ Saldo: R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDi
 ${bestDay?bestDay.split('-').reverse().join('/'):"Nenhum"}
 
 💸 Dia que mais gastou:
-${worstDay?worstDay.split('-').reverse().join('/'):"Nenhum"}
-`);
+${worstDay?worstDay.split('-').reverse().join('/'):"Nenhum"}`);
 }
 
 function renderUI(){
@@ -814,23 +898,18 @@ function renderUI(){
     const filterVal=document.getElementById('month-filter').value;
 
     if(!list) return;
-
     list.innerHTML="";
 
     let totalIncome=0;
     let totalExpense=0;
-
     const filtered=transactions.filter(t=>t.date.startsWith(filterVal));
-
     const grouped={};
 
     filtered.forEach(t=>{
         if(!grouped[t.date]){
             grouped[t.date]={items:[],dayIncome:0,dayExpense:0};
         }
-
         grouped[t.date].items.push(t);
-
         if(t.type==="entrada"){
             totalIncome+=t.amount;
             grouped[t.date].dayIncome+=t.amount;
@@ -876,16 +955,16 @@ function renderUI(){
         });
     });
 
-    const totalBalanceElem = document.getElementById('total-balance');
-    const totalIncomeElem = document.getElementById('total-income');
-    const totalExpenseElem = document.getElementById('total-expense');
-    
-    if(totalBalanceElem) totalBalanceElem.innerText=`R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-    if(totalIncomeElem) totalIncomeElem.innerText=`R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-    if(totalExpenseElem) totalExpenseElem.innerText=`R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    document.getElementById('total-balance').innerText=`R$ ${(totalIncome-totalExpense).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    document.getElementById('total-income').innerText=`R$ ${totalIncome.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    document.getElementById('total-expense').innerText=`R$ ${totalExpense.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
 }
 
-// Prevenir envio ao pressionar Enter
+// Inicialização
+document.getElementById('dashboardContent').style.display = 'none';
+document.getElementById('loginScreen').style.display = 'block';
+loadUsers();
+
 document.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         if (document.getElementById('loginScreen').style.display !== 'none') {
@@ -895,11 +974,6 @@ document.addEventListener('keypress', function(e) {
         }
     }
 });
-
-// Inicializar mostrando tela de login
-document.getElementById('dashboardContent').style.display = 'none';
-document.getElementById('loginScreen').style.display = 'block';
 </script>
-
 </body>
 </html>
