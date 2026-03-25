@@ -308,6 +308,27 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 margin-bottom:10px;
+flex-wrap: wrap;
+gap: 10px;
+}
+
+.report-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.report-buttons button {
+    flex: 1;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 14px;
+    padding: 10px;
+}
+
+.report-buttons button.active {
+    background: var(--primary);
+    color: white;
 }
 
 .day-group{
@@ -349,12 +370,6 @@ margin-right:10px;
     display: none;
 }
 
-.loading-spinner {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-}
-
 @media (max-width: 480px) {
     .row {
         flex-direction: column;
@@ -371,6 +386,10 @@ margin-right:10px;
     
     .logout-btn {
         width: 100%;
+    }
+    
+    .report-buttons {
+        flex-direction: column;
     }
 }
 
@@ -474,7 +493,7 @@ margin-right:10px;
 
         <div class="summary">
             <div class="card full">
-                <label>Saldo no Mês</label>
+                <label>Saldo no Período</label>
                 <p id="total-balance">R$ 0,00</p>
             </div>
             <div class="card">
@@ -487,8 +506,14 @@ margin-right:10px;
             </div>
         </div>
 
+        <!-- Botões de Relatório -->
+        <div class="report-buttons">
+            <button id="btnSemanal" onclick="setReportType('semanal')" class="active">📅 Semanal</button>
+            <button id="btnMensal" onclick="setReportType('mensal')">📆 Mensal</button>
+        </div>
+
         <div class="form-group">
-            <input type="text" id="desc" placeholder="Descrição" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g,'')">
+            <input type="text" id="desc" placeholder="Descrição" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ0-9\s]/g,'')">
             <div class="row">
                 <input type="text" id="amount" placeholder="Valor (ex: 15,00)" oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
                 <input type="date" id="date">
@@ -512,11 +537,12 @@ margin-right:10px;
         </div>
 
         <div class="list-header">
-            <strong>Histórico Diário</strong>
-            <input type="month" id="month-filter" onchange="renderUI()">
+            <strong>Histórico</strong>
+            <input type="month" id="month-filter" onchange="renderUI()" style="display: none;">
+            <input type="week" id="week-filter" onchange="renderUI()">
         </div>
 
-        <button onclick="relatorioMes()">📊 Relatório do Mês</button>
+        <button onclick="relatorioCompleto()">📊 Gerar Relatório Completo</button>
 
         <div id="transaction-list"></div>
     </div>
@@ -549,6 +575,7 @@ margin-right:10px;
     let currentUser = null;
     let transactions = [];
     let unsubscribeTransactions = null;
+    let currentReportType = 'semanal'; // 'semanal' ou 'mensal'
     
     // Referências DOM
     const loginScreen = document.getElementById('loginScreen');
@@ -585,6 +612,42 @@ margin-right:10px;
         setTimeout(() => {
             syncStatus.style.display = 'none';
         }, 2000);
+    }
+    
+    function setReportType(type) {
+        currentReportType = type;
+        
+        // Atualizar botões
+        document.getElementById('btnSemanal').classList.remove('active');
+        document.getElementById('btnMensal').classList.remove('active');
+        
+        if (type === 'semanal') {
+            document.getElementById('btnSemanal').classList.add('active');
+            document.getElementById('week-filter').style.display = 'block';
+            document.getElementById('month-filter').style.display = 'none';
+            // Definir semana atual
+            const today = new Date();
+            const year = today.getFullYear();
+            const weekNumber = getWeekNumber(today);
+            document.getElementById('week-filter').value = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+        } else {
+            document.getElementById('btnMensal').classList.add('active');
+            document.getElementById('week-filter').style.display = 'none';
+            document.getElementById('month-filter').style.display = 'block';
+            // Definir mês atual
+            const today = new Date();
+            document.getElementById('month-filter').value = today.toISOString().substring(0, 7);
+        }
+        
+        renderUI();
+    }
+    
+    function getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
     
     // Função para carregar transações em tempo real
@@ -706,7 +769,64 @@ margin-right:10px;
         }
     }
     
-    function relatorioMes() {
+    function relatorioCompleto() {
+        if (currentReportType === 'semanal') {
+            relatorioSemanal();
+        } else {
+            relatorioMensal();
+        }
+    }
+    
+    function relatorioSemanal() {
+        const filterVal = document.getElementById('week-filter').value;
+        if (!filterVal) return;
+        
+        // Extrair ano e semana
+        const [year, weekStr] = filterVal.split('-W');
+        const week = parseInt(weekStr);
+        
+        // Calcular datas da semana
+        const firstDayOfWeek = getDateOfISOWeek(week, year);
+        const lastDayOfWeek = new Date(firstDayOfWeek);
+        lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+        
+        const startDate = firstDayOfWeek.toISOString().split('T')[0];
+        const endDate = lastDayOfWeek.toISOString().split('T')[0];
+        
+        let totalIncome = 0;
+        let totalExpense = 0;
+        
+        transactions.forEach(t => {
+            if (t.date >= startDate && t.date <= endDate) {
+                if (t.type === "entrada") {
+                    totalIncome += t.amount;
+                } else {
+                    totalExpense += t.amount;
+                }
+            }
+        });
+        
+        alert(`📊 RELATÓRIO SEMANAL
+📅 Semana: ${startDate.split('-').reverse().join('/')} a ${endDate.split('-').reverse().join('/')}
+
+💰 ENTRADAS: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+📤 SAÍDAS: R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💵 SALDO: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+    }
+    
+    function getDateOfISOWeek(week, year) {
+        const simple = new Date(year, 0, 1 + (week - 1) * 7);
+        const dow = simple.getDay();
+        const weekStart = simple;
+        if (dow <= 4) {
+            weekStart.setDate(simple.getDate() - simple.getDay() + 1);
+        } else {
+            weekStart.setDate(simple.getDate() + 8 - simple.getDay());
+        }
+        return weekStart;
+    }
+    
+    function relatorioMensal() {
         const filterVal = document.getElementById('month-filter').value;
         
         let totalIncome = 0;
@@ -743,31 +863,58 @@ margin-right:10px;
             }
         });
         
-        alert(`RELATÓRIO DO MÊS
-        
-Entradas: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Saídas: R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Saldo: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        alert(`📊 RELATÓRIO MENSAL - ${filterVal.split('-').reverse().join('/')}
+
+💰 ENTRADAS: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+📤 SAÍDAS: R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💵 SALDO: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 
 🔥 Melhor dia de vendas:
-${bestDay ? bestDay.split('-').reverse().join('/') : "Nenhum"}
+${bestDay ? bestDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${bestValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
 
 💸 Dia que mais gastou:
-${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"}`);
+${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`);
     }
     
     function renderUI() {
         const list = document.getElementById('transaction-list');
-        const filterVal = document.getElementById('month-filter').value;
         
         if (!list) return;
+        
+        let filterVal;
+        if (currentReportType === 'semanal') {
+            filterVal = document.getElementById('week-filter').value;
+            if (!filterVal) return;
+        } else {
+            filterVal = document.getElementById('month-filter').value;
+            if (!filterVal) return;
+        }
+        
         list.innerHTML = "";
         
         let totalIncome = 0;
         let totalExpense = 0;
-        const filtered = transactions.filter(t => t.date.startsWith(filterVal));
-        const grouped = {};
         
+        // Filtrar transações baseado no tipo de relatório
+        let filtered = [];
+        if (currentReportType === 'semanal') {
+            // Filtrar por semana
+            const [year, weekStr] = filterVal.split('-W');
+            const week = parseInt(weekStr);
+            const firstDayOfWeek = getDateOfISOWeek(week, year);
+            const lastDayOfWeek = new Date(firstDayOfWeek);
+            lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+            
+            const startDate = firstDayOfWeek.toISOString().split('T')[0];
+            const endDate = lastDayOfWeek.toISOString().split('T')[0];
+            
+            filtered = transactions.filter(t => t.date >= startDate && t.date <= endDate);
+        } else {
+            filtered = transactions.filter(t => t.date.startsWith(filterVal));
+        }
+        
+        // Agrupar por dia
+        const grouped = {};
         filtered.forEach(t => {
             if (!grouped[t.date]) {
                 grouped[t.date] = { items: [], dayIncome: 0, dayExpense: 0 };
@@ -910,6 +1057,11 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"}`);
             
             const today = new Date();
             document.getElementById('month-filter').value = today.toISOString().substring(0, 7);
+            
+            // Definir semana atual
+            const year = today.getFullYear();
+            const weekNumber = getWeekNumber(today);
+            document.getElementById('week-filter').value = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
             document.getElementById('date').valueAsDate = today;
             
             loadTransactionsRealtime(user.uid);
@@ -937,7 +1089,10 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"}`);
     window.saveTransaction = saveTransaction;
     window.deleteTransaction = deleteTransaction;
     window.editTransaction = editTransaction;
-    window.relatorioMes = relatorioMes;
+    window.relatorioCompleto = relatorioCompleto;
+    window.relatorioSemanal = relatorioSemanal;
+    window.relatorioMensal = relatorioMensal;
+    window.setReportType = setReportType;
     window.renderUI = renderUI;
     
     console.log('🔥 Sistema Porquim IA conectado ao Firebase!');
