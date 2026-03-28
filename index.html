@@ -213,6 +213,70 @@ backdrop-filter:blur(8px);
     color: white;
 }
 
+/* Estilo da Notificação */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    padding: 15px 20px;
+    max-width: 300px;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    border-left: 5px solid #3b82f6;
+}
+
+.notification-income {
+    border-left-color: #10b981;
+}
+
+.notification-expense {
+    border-left-color: #ef4444;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #666;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 5px;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
 header{text-align:center;margin-bottom:25px;}
 
 h1{
@@ -361,6 +425,43 @@ transition: all 0.2s;
 
 .info{flex:1;}
 
+.info-details {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.payment-method {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.payment-pix {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.payment-card {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.payment-cash {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.payment-none {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
 .value{
 font-weight:800;
 margin-right:10px;
@@ -390,6 +491,12 @@ margin-right:10px;
     
     .report-buttons {
         flex-direction: column;
+    }
+    
+    .notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
     }
 }
 
@@ -422,6 +529,7 @@ margin-right:10px;
                 <p>Faça login para acessar seus dados</p>
                 <p style="font-size: 0.8rem; color: #94a3b8;">✓ Sincronização em tempo real</p>
                 <p style="font-size: 0.8rem; color: #94a3b8;">✓ Acesse de qualquer dispositivo</p>
+                <p style="font-size: 0.8rem; color: #f59e0b;">🔔 Notificações em tempo real!</p>
             </div>
             
             <div id="loginError" class="error-message"></div>
@@ -514,10 +622,17 @@ margin-right:10px;
 
         <div class="form-group">
             <input type="text" id="desc" placeholder="Descrição" oninput="this.value=this.value.replace(/[^a-zA-ZÀ-ÿ0-9\s]/g,'')">
-            <div class="row">
-                <input type="text" id="amount" placeholder="Valor (ex: 15,00)" oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
-                <input type="date" id="date">
-            </div>
+            
+            <input type="text" id="amount" placeholder="Valor (ex: 15,00)" oninput="this.value=this.value.replace(/[^0-9,]/g,'')">
+            
+            <select id="paymentMethod">
+                <option value="Dinheiro">💵 Dinheiro</option>
+                <option value="Pix">📱 Pix</option>
+                <option value="Cartão">💳 Cartão</option>
+            </select>
+            
+            <input type="date" id="date">
+            
             <div class="row">
                 <select id="category">
                     <option value="Venda">Venda 💰</option>
@@ -575,7 +690,8 @@ margin-right:10px;
     let currentUser = null;
     let transactions = [];
     let unsubscribeTransactions = null;
-    let currentReportType = 'semanal'; // 'semanal' ou 'mensal'
+    let currentReportType = 'semanal';
+    let deviceId = Math.random().toString(36).substring(2, 15);
     
     // Referências DOM
     const loginScreen = document.getElementById('loginScreen');
@@ -584,7 +700,77 @@ margin-right:10px;
     const syncStatus = document.getElementById('syncStatus');
     const onlineStatus = document.getElementById('onlineStatus');
     
-    // Funções auxiliares
+    // Função para tocar som "poup poup"
+    function playNotificationSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 880;
+            gainNode.gain.value = 0.3;
+            
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+            oscillator.stop(audioContext.currentTime + 0.5);
+            
+            setTimeout(() => {
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode2 = audioContext.createGain();
+                oscillator2.connect(gainNode2);
+                gainNode2.connect(audioContext.destination);
+                oscillator2.frequency.value = 660;
+                gainNode2.gain.value = 0.3;
+                oscillator2.start();
+                gainNode2.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+                oscillator2.stop(audioContext.currentTime + 0.5);
+            }, 200);
+        } catch(e) {
+            console.log("Som não suportado:", e);
+        }
+    }
+    
+    // Função para mostrar notificação
+    function showNotification(title, message, type = 'info') {
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = `notification notification-${type}`;
+        
+        const icon = type === 'entrada' ? '💰' : (type === 'saida' ? '📤' : '🐷');
+        
+        notificationDiv.innerHTML = `
+            <div class="notification-title">
+                <span>${icon}</span>
+                <strong>${title}</strong>
+            </div>
+            <div class="notification-message">${message}</div>
+            <div class="notification-time">${new Date().toLocaleTimeString()}</div>
+        `;
+        
+        document.body.appendChild(notificationDiv);
+        
+        playNotificationSound();
+        
+        setTimeout(() => {
+            notificationDiv.classList.add('notification-fade-out');
+            setTimeout(() => {
+                notificationDiv.remove();
+            }, 500);
+        }, 4000);
+        
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(title, { body: message, icon: "🐷" });
+        }
+    }
+    
+    function requestNotificationPermission() {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }
+    
     function showError(elementId, message) {
         const errorDiv = document.getElementById(elementId);
         errorDiv.textContent = message;
@@ -617,7 +803,6 @@ margin-right:10px;
     function setReportType(type) {
         currentReportType = type;
         
-        // Atualizar botões
         document.getElementById('btnSemanal').classList.remove('active');
         document.getElementById('btnMensal').classList.remove('active');
         
@@ -625,7 +810,6 @@ margin-right:10px;
             document.getElementById('btnSemanal').classList.add('active');
             document.getElementById('week-filter').style.display = 'block';
             document.getElementById('month-filter').style.display = 'none';
-            // Definir semana atual
             const today = new Date();
             const year = today.getFullYear();
             const weekNumber = getWeekNumber(today);
@@ -634,7 +818,6 @@ margin-right:10px;
             document.getElementById('btnMensal').classList.add('active');
             document.getElementById('week-filter').style.display = 'none';
             document.getElementById('month-filter').style.display = 'block';
-            // Definir mês atual
             const today = new Date();
             document.getElementById('month-filter').value = today.toISOString().substring(0, 7);
         }
@@ -650,7 +833,6 @@ margin-right:10px;
         return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
     
-    // Função para carregar transações em tempo real
     function loadTransactionsRealtime(userId) {
         if (unsubscribeTransactions) {
             unsubscribeTransactions();
@@ -660,16 +842,30 @@ margin-right:10px;
         
         unsubscribeTransactions = onValue(transactionsRef, (snapshot) => {
             const data = snapshot.val();
+            let newTransactions = [];
+            
             if (data) {
-                const newTransactions = Object.keys(data).map(key => ({
+                newTransactions = Object.keys(data).map(key => ({
                     id: key,
                     ...data[key]
                 }));
                 newTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                transactions = newTransactions;
-            } else {
-                transactions = [];
             }
+            
+            if (transactions.length > 0 && newTransactions.length > transactions.length) {
+                const oldIds = new Set(transactions.map(t => t.id));
+                const newTransaction = newTransactions.find(t => !oldIds.has(t.id));
+                
+                if (newTransaction && newTransaction.device !== deviceId) {
+                    const tipo = newTransaction.type === 'entrada' ? '💰 NOVA VENDA' : '📤 NOVO GASTO';
+                    const pagamentoIcon = newTransaction.paymentMethod === 'Pix' ? '📱' : (newTransaction.paymentMethod === 'Cartão' ? '💳' : (newTransaction.paymentMethod === 'Dinheiro' ? '💵' : '❓'));
+                    const pagamentoText = newTransaction.paymentMethod ? ` ${pagamentoIcon} ${newTransaction.paymentMethod}` : '';
+                    const mensagem = `${newTransaction.desc} - R$ ${newTransaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${pagamentoText}`;
+                    showNotification(tipo, mensagem, newTransaction.type);
+                }
+            }
+            
+            transactions = newTransactions;
             renderUI();
             showSyncMessage('✓ Dados sincronizados em tempo real');
         }, (error) => {
@@ -678,7 +874,6 @@ margin-right:10px;
         });
     }
     
-    // Função para salvar transação
     async function saveTransactionToFirebase(transaction) {
         if (!currentUser) return;
         
@@ -688,7 +883,6 @@ margin-right:10px;
         return newTransactionRef.key;
     }
     
-    // Função para deletar transação
     async function deleteTransactionFromFirebase(transactionId) {
         if (!currentUser) return;
         
@@ -696,7 +890,6 @@ margin-right:10px;
         await remove(transactionRef);
     }
     
-    // Funções do sistema
     function parseValue(val) {
         if (!val) return 0;
         let clean = val.replace(/[^\d,]/g, '').replace(',', '.');
@@ -709,6 +902,7 @@ margin-right:10px;
         const date = document.getElementById('date').value;
         const category = document.getElementById('category').value;
         const type = document.getElementById('type').value;
+        const paymentMethod = document.getElementById('paymentMethod').value;
         
         if (!desc || amount <= 0 || !date) {
             alert("Preencha todos os campos!");
@@ -721,13 +915,19 @@ margin-right:10px;
             date,
             category,
             type,
+            paymentMethod,
             createdAt: Date.now(),
-            device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
+            device: deviceId,
+            deviceInfo: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
         };
         
         try {
             await saveTransactionToFirebase(newTransaction);
-            showSyncMessage('✅ Venda registrada e sincronizada!');
+            
+            const pagamentoIcon = paymentMethod === 'Pix' ? '📱' : (paymentMethod === 'Cartão' ? '💳' : '💵');
+            const tipo = type === 'entrada' ? '💰 VENDA REGISTRADA' : '📤 GASTO REGISTRADO';
+            const mensagem = `${desc} - R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${pagamentoIcon} ${paymentMethod}`;
+            showNotification(tipo, mensagem, type);
             
             document.getElementById('desc').value = "";
             document.getElementById('amount').value = "";
@@ -758,6 +958,7 @@ margin-right:10px;
         document.getElementById('date').value = t.date;
         document.getElementById('category').value = t.category;
         document.getElementById('type').value = t.type;
+        document.getElementById('paymentMethod').value = t.paymentMethod || 'Dinheiro';
         
         try {
             await deleteTransactionFromFirebase(id);
@@ -781,11 +982,9 @@ margin-right:10px;
         const filterVal = document.getElementById('week-filter').value;
         if (!filterVal) return;
         
-        // Extrair ano e semana
         const [year, weekStr] = filterVal.split('-W');
         const week = parseInt(weekStr);
         
-        // Calcular datas da semana
         const firstDayOfWeek = getDateOfISOWeek(week, year);
         const lastDayOfWeek = new Date(firstDayOfWeek);
         lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
@@ -795,14 +994,18 @@ margin-right:10px;
         
         let totalIncome = 0;
         let totalExpense = 0;
+        let pixTotal = 0;
+        let cardTotal = 0;
+        let cashTotal = 0;
         
         transactions.forEach(t => {
-            if (t.date >= startDate && t.date <= endDate) {
-                if (t.type === "entrada") {
-                    totalIncome += t.amount;
-                } else {
-                    totalExpense += t.amount;
-                }
+            if (t.date >= startDate && t.date <= endDate && t.type === "entrada") {
+                totalIncome += t.amount;
+                if (t.paymentMethod === 'Pix') pixTotal += t.amount;
+                else if (t.paymentMethod === 'Cartão') cardTotal += t.amount;
+                else if (t.paymentMethod === 'Dinheiro') cashTotal += t.amount;
+            } else if (t.date >= startDate && t.date <= endDate && t.type === "saida") {
+                totalExpense += t.amount;
             }
         });
         
@@ -811,7 +1014,12 @@ margin-right:10px;
 
 💰 ENTRADAS: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 📤 SAÍDAS: R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-💵 SALDO: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+💵 SALDO: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+💳 FORMAS DE PAGAMENTO (VENDAS):
+📱 Pix: R$ ${pixTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💳 Cartão: R$ ${cardTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💵 Dinheiro: R$ ${cashTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
     }
     
     function getDateOfISOWeek(week, year) {
@@ -835,6 +1043,9 @@ margin-right:10px;
         let bestValue = 0;
         let worstDay = "";
         let worstValue = 0;
+        let pixTotal = 0;
+        let cardTotal = 0;
+        let cashTotal = 0;
         const grouped = {};
         
         transactions
@@ -846,6 +1057,9 @@ margin-right:10px;
                 if (t.type === "entrada") {
                     totalIncome += t.amount;
                     grouped[t.date].income += t.amount;
+                    if (t.paymentMethod === 'Pix') pixTotal += t.amount;
+                    else if (t.paymentMethod === 'Cartão') cardTotal += t.amount;
+                    else if (t.paymentMethod === 'Dinheiro') cashTotal += t.amount;
                 } else {
                     totalExpense += t.amount;
                     grouped[t.date].expense += t.amount;
@@ -868,6 +1082,11 @@ margin-right:10px;
 💰 ENTRADAS: R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 📤 SAÍDAS: R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 💵 SALDO: R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+💳 FORMAS DE PAGAMENTO (VENDAS):
+📱 Pix: R$ ${pixTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💳 Cartão: R$ ${cardTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+💵 Dinheiro: R$ ${cashTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 
 🔥 Melhor dia de vendas:
 ${bestDay ? bestDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${bestValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
@@ -895,10 +1114,8 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
         let totalIncome = 0;
         let totalExpense = 0;
         
-        // Filtrar transações baseado no tipo de relatório
         let filtered = [];
         if (currentReportType === 'semanal') {
-            // Filtrar por semana
             const [year, weekStr] = filterVal.split('-W');
             const week = parseInt(weekStr);
             const firstDayOfWeek = getDateOfISOWeek(week, year);
@@ -913,7 +1130,6 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             filtered = transactions.filter(t => t.date.startsWith(filterVal));
         }
         
-        // Agrupar por dia
         const grouped = {};
         filtered.forEach(t => {
             if (!grouped[t.date]) {
@@ -947,11 +1163,18 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             
             data.items.forEach(t => {
                 const isInc = t.type === "entrada";
+                const paymentIcon = t.paymentMethod === 'Pix' ? '📱' : (t.paymentMethod === 'Cartão' ? '💳' : (t.paymentMethod === 'Dinheiro' ? '💵' : '❓'));
+                const paymentClass = t.paymentMethod === 'Pix' ? 'payment-pix' : (t.paymentMethod === 'Cartão' ? 'payment-card' : (t.paymentMethod === 'Dinheiro' ? 'payment-cash' : 'payment-none'));
+                const paymentText = t.paymentMethod ? `${paymentIcon} ${t.paymentMethod}` : '❓ Não informado';
+                
                 list.innerHTML += `
                     <div class="transaction-item ${isInc ? 'item-income' : 'item-expense'}">
                         <div class="info">
                             <strong>${t.desc}</strong>
-                            <span>${t.category}</span>
+                            <div class="info-details">
+                                <span>${t.category}</span>
+                                <span class="payment-method ${paymentClass}">${paymentText}</span>
+                            </div>
                         </div>
                         <div class="value" style="color:${isInc ? 'green' : 'red'}">
                             ${isInc ? '+' : '-'} R$ ${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -970,7 +1193,6 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
         document.getElementById('total-expense').innerText = `R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     }
     
-    // Funções de autenticação
     async function login() {
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
@@ -1045,7 +1267,6 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
         loginScreen.style.display = 'block';
     }
     
-    // Monitorar estado de autenticação
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -1058,13 +1279,17 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             const today = new Date();
             document.getElementById('month-filter').value = today.toISOString().substring(0, 7);
             
-            // Definir semana atual
             const year = today.getFullYear();
             const weekNumber = getWeekNumber(today);
             document.getElementById('week-filter').value = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
             document.getElementById('date').valueAsDate = today;
             
             loadTransactionsRealtime(user.uid);
+            requestNotificationPermission();
+            
+            setTimeout(() => {
+                showNotification('🐷 Porquim IA', 'Sistema sincronizado! Notificações ativas.', 'info');
+            }, 1000);
         } else {
             if (unsubscribeTransactions) {
                 unsubscribeTransactions();
@@ -1080,7 +1305,6 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
         }
     });
     
-    // Expor funções globalmente
     window.login = login;
     window.register = register;
     window.logout = logout;
@@ -1096,6 +1320,7 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
     window.renderUI = renderUI;
     
     console.log('🔥 Sistema Porquim IA conectado ao Firebase!');
+    console.log('📱 ID do dispositivo:', deviceId);
 </script>
 </body>
 </html>
