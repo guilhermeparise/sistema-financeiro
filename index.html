@@ -937,11 +937,6 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             if (!filterVal) return;
         }
         
-        list.innerHTML = "";
-        
-        let totalIncome = 0;
-        let totalExpense = 0;
-        
         let filtered = [];
         if (currentReportType === 'semanal') {
             const [year, weekStr] = filterVal.split('-W');
@@ -958,6 +953,7 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             filtered = transactions.filter(t => t.date.startsWith(filterVal));
         }
         
+        // Agrupar por data
         const grouped = {};
         filtered.forEach(t => {
             if (!grouped[t.date]) {
@@ -965,22 +961,31 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             }
             grouped[t.date].items.push(t);
             if (t.type === "entrada") {
-                totalIncome += t.amount;
                 grouped[t.date].dayIncome += t.amount;
             } else {
-                totalExpense += t.amount;
                 grouped[t.date].dayExpense += t.amount;
             }
         });
         
+        // Ordenar datas decrescente (mais recente primeiro)
         const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+        
+        // Construir HTML
+        let html = '';
+        let totalIncome = 0;
+        let totalExpense = 0;
         
         sortedDates.forEach(date => {
             const data = grouped[date];
             const dayBalance = data.dayIncome - data.dayExpense;
             const dateBr = date.split('-').reverse().join('/');
             
-            list.innerHTML += `
+            // Calcular totais gerais
+            totalIncome += data.dayIncome;
+            totalExpense += data.dayExpense;
+            
+            // Cabeçalho do dia
+            html += `
                 <div class="day-group">
                     <strong>📅 ${dateBr}</strong>
                     <span style="color:${dayBalance >= 0 ? 'green' : 'red'}">
@@ -989,19 +994,18 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
                 </div>
             `;
             
-            data.items.forEach(t => {
-                const isInc = t.type === "entrada";
-                
-                // Só mostra a forma de pagamento se ela existir (transações novas)
-                let paymentHtml = '';
-                if (t.paymentMethod) {
-                    const paymentIcon = t.paymentMethod === 'Pix' ? '📱' : (t.paymentMethod === 'Cartão' ? '💳' : '💵');
-                    const paymentClass = t.paymentMethod === 'Pix' ? 'payment-pix' : (t.paymentMethod === 'Cartão' ? 'payment-card' : 'payment-cash');
-                    paymentHtml = `<span class="payment-method ${paymentClass}">${paymentIcon} ${t.paymentMethod}</span>`;
-                }
-                
-                list.innerHTML += `
-                    <div class="transaction-item ${isInc ? 'item-income' : 'item-expense'}">
+            // Separar itens por tipo dentro do dia: primeiro entradas, depois saídas
+            const entradasDoDia = data.items.filter(t => t.type === "entrada");
+            const saidasDoDia = data.items.filter(t => t.type === "saida");
+            
+            // Renderizar entradas (verde)
+            entradasDoDia.forEach(t => {
+                const paymentHtml = t.paymentMethod ? 
+                    `<span class="payment-method ${t.paymentMethod === 'Pix' ? 'payment-pix' : (t.paymentMethod === 'Cartão' ? 'payment-card' : 'payment-cash')}">
+                        ${t.paymentMethod === 'Pix' ? '📱' : (t.paymentMethod === 'Cartão' ? '💳' : '💵')} ${t.paymentMethod}
+                     </span>` : '';
+                html += `
+                    <div class="transaction-item item-income">
                         <div class="info">
                             <strong>${t.desc}</strong>
                             <div class="info-details">
@@ -1009,8 +1013,34 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
                                 ${paymentHtml}
                             </div>
                         </div>
-                        <div class="value" style="color:${isInc ? 'green' : 'red'}">
-                            ${isInc ? '+' : '-'} R$ ${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <div class="value" style="color:green">
+                            + R$ ${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div class="actions">
+                            <button onclick="window.editTransaction('${t.id}')">✏️</button>
+                            <button onclick="window.deleteTransaction('${t.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Renderizar saídas (vermelho)
+            saidasDoDia.forEach(t => {
+                const paymentHtml = t.paymentMethod ? 
+                    `<span class="payment-method ${t.paymentMethod === 'Pix' ? 'payment-pix' : (t.paymentMethod === 'Cartão' ? 'payment-card' : 'payment-cash')}">
+                        ${t.paymentMethod === 'Pix' ? '📱' : (t.paymentMethod === 'Cartão' ? '💳' : '💵')} ${t.paymentMethod}
+                     </span>` : '';
+                html += `
+                    <div class="transaction-item item-expense">
+                        <div class="info">
+                            <strong>${t.desc}</strong>
+                            <div class="info-details">
+                                <span>${t.category}</span>
+                                ${paymentHtml}
+                            </div>
+                        </div>
+                        <div class="value" style="color:red">
+                            - R$ ${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                         <div class="actions">
                             <button onclick="window.editTransaction('${t.id}')">✏️</button>
@@ -1021,6 +1051,14 @@ ${worstDay ? worstDay.split('-').reverse().join('/') : "Nenhum"} (R$ ${worstValu
             });
         });
         
+        // Se não houver transações
+        if (sortedDates.length === 0) {
+            html = '<div style="text-align:center; padding:40px; color:#999;">Nenhuma transação neste período</div>';
+        }
+        
+        list.innerHTML = html;
+        
+        // Atualizar cards
         document.getElementById('total-balance').innerText = `R$ ${(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         document.getElementById('total-income').innerText = `R$ ${totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         document.getElementById('total-expense').innerText = `R$ ${totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
